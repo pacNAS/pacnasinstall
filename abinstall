@@ -1,4 +1,5 @@
 #!/bin/bash
+# 
 
 # Main Variables and messages for dialog
   TITLE="ArchBang Linux Installation"
@@ -893,21 +894,20 @@ auto_fstab()
     fi
 }
 
-
-find_block_devices()
-{
-for dev_type in sd hd mmcblk; do 
-	for dev in $(ls /dev 2>/dev/null | egrep "^${dev_type}"); do
-		echo ${dev}
-		echo "~"
-	done
-done
-}
-
 # This is my new install for grub-bios [ will upload original function ]
 # Will need a way to check grub.cfg although you cannot edit it directly 
 dogrub() {
 
+DEVS=$(finddisks _)
+    DEVS="$DEVS $(findpartitions _)"
+    if [ "$DEVS" = "" ]; then
+        DIALOG --msgbox "${_nohdfound}" 0 0
+        return 1
+    fi
+    DIALOG --menu "${_whereinststage1}" 14 55 7 $DEVS 2>$ANSWER || return 1
+    ROOTDEV=$(cat $ANSWER)
+    DIALOG --infobox "${_installinggrub}" 3 30
+    
     # freeze xfs filesystems if any, to enable grub installation on xfs filesystems
     if [ -x /usr/sbin/xfs_freeze ]; then
      if [ "$(blkid -o value -s TYPE -p $(findmnt -o source -n $DESTDIR/boot))" == "xfs" ];then
@@ -919,32 +919,30 @@ dogrub() {
       unfreezeroot=y
      fi
     fi
-
-#Install Grub Here
-
-# Get user to select where grub is to be installed
-DEVS=$(find_block_devices)
-DIALOG --menu "${_whereinststage1}" 14 55 7 $DEVS 2>$ANSWER 
-disk_name=$ANSWER
-
-# Mount drives
-chroot_mount
-
-chroot "$DESTDIR" << EOF
-modprobe dm-mod
-echo "Installing GRUB..."
-grub-install --recheck --debug /dev/"$disk_name"
-cp /usr/share/locale/en\@quot/LC_MESSAGES/grub.mo \
-	 /boot/grub/locale/en.mo
-grub-mkconfig -o /boot/grub/grub.cfg
-EOF
-
-# Umount drives
-chroot_umount
-    # unfreeze xfs filesystems if any
+    
+    grub-install --directory=$DESTDIR/usr/lib/grub/i386-pc --target=i386-pc \
+					  --boot-directory=$DESTDIR/boot \
+					  --recheck --debug "$(cat $ANSWER)" > /tmp/grub.log 2>&1 # remove cat and use "$ROOTDEV"?
+    grub-mkconfig -o $DESTDIR/boot/grub/grub.cfg > /dev/null 2>&1
+    sync
+    
+    
+    # Todo edit /etc/default/grub to allow grub-mkconfig to use UUID
+    CORRECT_UUID=$(blkid -p "$PART_ROOT" | sed -e 's/^.*UUID=//g' | sed 's/ .*//' | sed 's/"//g')
+    ROOTDEV_ESC=$(echo "$PART_ROOT" | sed 's|\/|\\/|g')
+    sed -i "s/linux\ \/boot\/vmlinuz-linux\ root=UUID=.*\ ro\ quiet/linux\ \/boot\/vmlinuz-linux\ root=${ROOTDEV_ESC}\ ro\ quiet/g" $DESTDIR/boot/grub/grub.cfg
+  
+	# unfreeze xfs filesystems if any
     if [ -x /usr/sbin/xfs_freeze ]; then
      [ -z "$unfreezeboot" ] && /usr/sbin/xfs_freeze -u $DESTDIR/boot > /dev/null 2>&1
      [ -z "$unfreezeroot" ] && /usr/sbin/xfs_freeze -u $DESTDIR/ > /dev/null 2>&1
+    fi
+
+    cat /tmp/grub.log >$LOG
+
+    if grep "Error [0-9]*: " /tmp/grub.log >/dev/null; then
+        DIALOG --msgbox "${_errorinstgrub} (${_errordetails} $LOG)" 0 0
+        return 1
     fi
 
     DIALOG --msgbox "${_instgrubsuccess}" 0 0
