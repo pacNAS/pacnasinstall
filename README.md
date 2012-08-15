@@ -10,5 +10,7 @@ cd abinstall
 
 sudo ./abinstall
 
+Currently working on grub-bios install, check /tmp/grub.log prior to 
+rebooting to make sure grub installed correctly.
 
 
