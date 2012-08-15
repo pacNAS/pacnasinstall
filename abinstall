@@ -1,6 +1,6 @@
 #!/bin/bash
 # 
-# Version 1.0  | 15-08-2012 | grub-bios install
+# Version 1.1  | 15-08-2012 | grub-bios install
 #
 # Main Variables and messages for dialog
   TITLE="ArchBang Linux Installation"
@@ -336,51 +336,6 @@ findpartitions() {
     cd "$workdir"
 }
 
-# Grub this is for legacy not grub-bios possible removal
-get_grub_map() {
-    rm /tmp/dev.map
-    DIALOG --infobox "$_grubdetectdisks" 0 0
-    $DESTDIR/sbin/grub --no-floppy --device-map /tmp/dev.map >/tmp/grub.log 2>&1 <<EOF
-quit
-EOF
-}
-
-# This may not be of any use now with grub-bios
-mapdev() {
-    partition_flag=0
-    device_found=0
-    devs=$(cat /tmp/dev.map | grep -v fd | sed 's/ *\t/ /' | sed ':a;$!N;$!ba;s/\n/ /g')
-    linuxdevice=$(echo $1 | cut -b1-8)
-    if [ "$(echo $1 | egrep '[0-9]$')" ]; then
-        # /dev/hdXY
-        pnum=$(echo $1 | cut -b9-)
-        pnum=$(($pnum-1))
-        partition_flag=1
-    fi
-    for  dev in $devs
-    do
-        if [ "(" = $(echo $dev | cut -b1) ]; then
-        grubdevice="$dev"
-        else
-        if [ "$dev" = "$linuxdevice" ]; then
-            device_found=1
-            break
-        fi
-       fi
-    done
-    if [ "$device_found" = "1" ]; then
-        if [ "$partition_flag" = "0" ]; then
-            echo "$grubdevice"
-        else
-            grubdevice_stringlen=${#grubdevice}
-            grubdevice_stringlen=$(($grubdevice_stringlen - 1))
-            grubdevice=$(echo $grubdevice | cut -b1-$grubdevice_stringlen)
-            echo "$grubdevice,$pnum)"
-        fi
-    else
-        echo "DEVICE NOT FOUND"
-    fi
-}
 
 printk()
 {
@@ -897,7 +852,7 @@ auto_fstab()
 
 # This is my new install for grub-bios [ will upload original function ]
 # Will need a way to check grub.cfg although you cannot edit it directly 
-dogrub() {
+grub-bios() {
 
 DEVS=$(finddisks _)
     DEVS="$DEVS $(findpartitions _)"
@@ -921,27 +876,28 @@ DEVS=$(finddisks _)
      fi
     fi
     
-    grub-install --directory=$DESTDIR/usr/lib/grub/i386-pc --target=i386-pc \
-					  --boot-directory=$DESTDIR/boot \
-					  --recheck --debug "$(cat $ANSWER)" > /tmp/grub.log 2>&1 # remove cat and use "$ROOTDEV"?
-    grub-mkconfig -o $DESTDIR/boot/grub/grub.cfg > /dev/null 2>&1
-    sync
+chroot_mount
+
+chroot ${DESTDIR} << EOF
+modprobe dm-mod
+grub-install --target=i386-pc --recheck --debug  /dev/"$(cat $ANSWER)" > /tmp/grub.log
+mkdir -p /boot/grub/locale
+cp /usr/share/locale/en\@quot/LC_MESSAGES/grub.mo /boot/grub/locale/en.mo
+grub-mkconfig -o /boot/grub/grub.cfg
+sync
+EOF
+
+chroot_umount
     
-    
-    # Todo edit /etc/default/grub to allow grub-mkconfig to use UUID
-    CORRECT_UUID=$(blkid -p "$PART_ROOT" | sed -e 's/^.*UUID=//g' | sed 's/ .*//' | sed 's/"//g')
-    ROOTDEV_ESC=$(echo "$PART_ROOT" | sed 's|\/|\\/|g')
-    sed -i "s/linux\ \/boot\/vmlinuz-linux\ root=UUID=.*\ ro\ quiet/linux\ \/boot\/vmlinuz-linux\ root=${ROOTDEV_ESC}\ ro\ quiet/g" $DESTDIR/boot/grub/grub.cfg
-  
 	# unfreeze xfs filesystems if any
     if [ -x /usr/sbin/xfs_freeze ]; then
      [ -z "$unfreezeboot" ] && /usr/sbin/xfs_freeze -u $DESTDIR/boot > /dev/null 2>&1
      [ -z "$unfreezeroot" ] && /usr/sbin/xfs_freeze -u $DESTDIR/ > /dev/null 2>&1
     fi
 
-    cat /tmp/grub.log >$LOG
+    cat $DESTDIR/tmp/grub.log >$LOG
 
-    if grep "Error [0-9]*: " /tmp/grub.log >/dev/null; then
+    if grep "Error [0-9]*: " $DESTDIR/tmp/grub.log >/dev/null; then
         DIALOG --msgbox "${_errorinstgrub} (${_errordetails} $LOG)" 0 0
         return 1
     fi
@@ -1210,7 +1166,7 @@ install_bootloader()
         "GRUB" "${_installgrubbl}" \
         "${_none_label}" "${_installnobl}" 2>$ANSWER
     case $(cat $ANSWER) in
-        "GRUB") dogrub ;;
+        "GRUB") grub-bios ;;
     esac
 }
 
