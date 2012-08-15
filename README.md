@@ -1,7 +1,14 @@
-Welcome to the ArchBang intaller git page..
+To test load up ArchBang latest testing live iso 
 
-Please be gentle with me, this is my first time using github so will be learning as I go
+Open a terminal then:
 
-Feel free to check out code.
+sudo pacman -Syy git
 
-Mr Green
+git clone git://github.com/mrgreen3/abinstall.git 
+
+cd abinstall
+
+sudo ./abinstall
+
+
+
