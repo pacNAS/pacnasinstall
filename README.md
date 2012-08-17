@@ -19,5 +19,5 @@ TODO:
 
 Error checking /tmp/grub.log for completed grub-bios install
 
-Change default block device [/dev/sda]
+Menu edit
 
