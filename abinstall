@@ -807,12 +807,10 @@ installsystem() {
 }
 
 # Set up new install copy over files from /src
-# Need to check grub part for grub-bios!
 hd_config()
 {
-#grub do we need this for grub-bios?
+# grub-bios directory setup
 mkdir -p $DESTDIR/boot/grub
-cp -r /usr/lib/grub/i386-pc/* $DESTDIR/boot/grub/
 #nm
 rm $DESTDIR/etc/xdg/autostart/nm-applet.desktop &>/dev/null
 #little bonus
@@ -876,29 +874,20 @@ DEVS=$(finddisks _)
      fi
     fi
     
-#chroot_mount
+chroot_mount
 
 # Currently set /dev/sda need to change too "$(cat $ANSWER)" or better!
-#chroot ${DESTDIR} << EOF
-#modprobe dm-mod
-#grub-install --target=i386-pc --recheck --debug /dev/sda > /tmp/grub.log
-#mkdir -p /boot/grub/locale
-#cp /usr/share/locale/en\@quot/LC_MESSAGES/grub.mo /boot/grub/locale/en.mo
-#grub-mkconfig -o /boot/grub/grub.cfg
-#sync
-#EOF
-
-#chroot_umount
- 
-grub-install --directory=$DESTDIR/usr/lib/grub/i386-pc \
-				 --target=i386-pc \
-				 --boot-directory=$DESTDIR/boot \
-				 --recheck \
-				 --debug "$(cat $ANSWER)" > /tmp/grub.log 2>&1
-mkdir -p $DESTDIR/boot/grub/locale
-cp $DESTDIR/usr/share/locale/en\@quot/LC_MESSAGES/grub.mo $DESTDIR/boot/grub/locale/en.
-grub-mkconfig -o $DESTDIR/boot/grub/grub.cfg > /dev/null 2>&1
+chroot ${DESTDIR} << EOF
+modprobe dm-mod
+grub-install --target=i386-pc --recheck --debug "$(cat $ANSWER)" > /tmp/grub.log
+mkdir -p /boot/grub/locale
+cp /usr/share/locale/en\@quot/LC_MESSAGES/grub.mo /boot/grub/locale/en.mo
+grub-mkconfig -o /boot/grub/grub.cfg
 sync
+EOF
+
+chroot_umount
+
     
 	# unfreeze xfs filesystems if any
     if [ -x /usr/sbin/xfs_freeze ]; then
@@ -906,9 +895,9 @@ sync
      [ -z "$unfreezeroot" ] && /usr/sbin/xfs_freeze -u $DESTDIR/ > /dev/null 2>&1
     fi
 
-cat /tmp/grub.log >$LOG
-# This needs checking for Error message think this is from grub-legacy
-	 if grep "Error [0-9]*: " /tmp/grub.log >/dev/null; then
+cat $DESTDIR/tmp/grub.log >$LOG
+# This needs checking for Error message think this is from grub-legacy!
+	 if grep "Error [0-9]*: " $DESTDIR/tmp/grub.log >/dev/null; then
         DIALOG --msgbox "${_errorinstgrub} (${_errordetails} $LOG)" 0 0
         return 1
     fi
