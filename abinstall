@@ -1,6 +1,6 @@
 #!/bin/bash
 # 
-# Version 1.31  | 16-08-2012 | grub-bios install
+# Version 1.32  | 16-08-2012 | grub-bios install
 #
 # Main Variables and messages for dialog
   TITLE="ArchBang Linux Installation"
@@ -89,7 +89,8 @@
   _enterrootdevpath="Enter the path of the root partition"
   _errorinstgrub="Error installing GRUB."
   _instgrubsuccess="GRUB successfully installed."
-
+  _instsyslinuxsuccess="Syslinux sucessfully installed"
+  
   _machinetimezone="Set the machine time to UTC universal time (recommended) or local time (if you have a dual-boot with a system requiring it)?"
   _selectregion="Please select a region"
   _selecttimezone="Please select a timezone"
@@ -122,7 +123,8 @@
   _xorgevdevconftext="Xorg keymap"
   _xorgkblayouttext="Xorg keyboard layout"
   _installabootloader="Install a bootloader?"
-  _installgrubbl='Install GRUB (needed to boot)'
+  _installgrubbl='Install Grub-bios'
+  _installsyslinux='Install Syslinux'
   _installnobl="If you know what you're doing."
   _none_label="None"
 
@@ -906,6 +908,16 @@ cat $DESTDIR/tmp/grub.log >$LOG
     S_GRUB=1
 }
 
+syslinux_install()
+{
+	# We might need to run it from $DESTDIR/usr/sbin/
+	syslinux-install_update -iam -c $DESTDIR
+	# Not sure if we will need a default config to load possibly along with splash?
+	$EDITOR /$DESTDIR/boot/syslinux/syslinux.cfg
+	# Again need some error checking !!
+	DIALOG --msgbox "${_instsyslinuxsuccess}" 0 0
+}
+
 # set_clock()
 # prompts user to set hardware clock and timezone
 #
@@ -1164,9 +1176,11 @@ install_bootloader()
     DIALOG --colors --menu "${_installabootloader}\n\n" \
         10 65 2 \
         "GRUB" "${_installgrubbl}" \
+        "Syslinux" "${_installsyslinux}" \
         "${_none_label}" "${_installnobl}" 2>$ANSWER
     case $(cat $ANSWER) in
         "GRUB") grub-bios ;;
+        "Syslinux") syslinux_install ;;
     esac
 }
 
