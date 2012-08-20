@@ -15,9 +15,12 @@ sudo ./abinstall
 Currently working on grub-bios install, check /tmp/grub.log prior to 
 rebooting to make sure grub installed correctly.
 
+Added an syslinux option to installer, very much work in progress.
+
 TODO:
 
 Error checking /tmp/grub.log for completed grub-bios install
 
-Menu edit
+Test Syslinux install possibly add default syslinux.conf
+
 
