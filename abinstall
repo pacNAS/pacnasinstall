@@ -1,7 +1,11 @@
 #!/bin/bash
 # 
 # Version 1.32  | 16-08-2012 | grub-bios install
-#
+# Version 1.33  | 21-08-2012 | added error checking to syslinux
+#			     | removed entries for hosts.[allow|deny]
+#			     | removed mention of wicd
+#			     | removed pause before cp_install
+
 # Main Variables and messages for dialog
   TITLE="ArchBang Linux Installation"
   _yes="Yes"
@@ -90,6 +94,7 @@
   _errorinstgrub="Error installing GRUB."
   _instgrubsuccess="GRUB successfully installed."
   _instsyslinuxsuccess="Syslinux sucessfully installed"
+  _syslinuxwrongfs="Syslinux needs to be installed on ext2, ext3 or ex4... Press any key to continue"
   
   _machinetimezone="Set the machine time to UTC universal time (recommended) or local time (if you have a dual-boot with a system requiring it)?"
   _selectregion="Please select a region"
@@ -114,10 +119,8 @@
   _fstabtext="Mount points (please check)"
   _mkinitcpioconftext="Initramfs config (can be lightened)"
   _modprobeconftext="Module options (special cases only)"
-  _resolvconftext="DNS servers (managed by wicd)"
+  _resolvconftext="DNS servers"
   _hoststext="Network hosts (local DNS)"
-  _hostsdenytext="Blocked network services"
-  _hostsallowtext="Authorized network services"
   _localegentext="Languages (set to EN)"
   _mirrorlisttext="Packages mirror list"
   _xorgevdevconftext="Xorg keymap"
@@ -776,7 +779,7 @@ mountpoints() {
 installsystem() {
     DIALOG --msgbox "${_installationwillstart}" 0 0
 	mkdir -p $DESTDIR/bypass
-	(cd $DESTDIR && unsquashfs -da 32 -fr 32 -d ./vomi /run/archiso/bootmnt/arch/${arch}/root-image.fs.sfs && mount vomi/root-image.fs $DESTDIR/bypass && echo -e "\n About to start copying files. Press enter to continue and press enter again once done copying." && read && cp_install)
+	(cd $DESTDIR && unsquashfs -da 32 -fr 32 -d ./vomi /run/archiso/bootmnt/arch/${arch}/root-image.fs.sfs && mount vomi/root-image.fs $DESTDIR/bypass && cp_install)
 	echo $? > /tmp/.install-retcode
 	if [ $(cat /tmp/.install-retcode) -ne 0 ]; then echo -e "\n${_installationfail}" >>/tmp/unsquasherror.log
 	else echo -e "\n${_installationsuccess}" >>/tmp/unsquasherror.log
@@ -910,12 +913,20 @@ cat $DESTDIR/tmp/grub.log >$LOG
 
 syslinux_install()
 {
-	# We might need to run it from $DESTDIR/usr/sbin/
-	syslinux-install_update -iam -c $DESTDIR
-	# Not sure if we will need a default config to load possibly along with splash?
-	$EDITOR /$DESTDIR/boot/syslinux/syslinux.cfg
-	# Again need some error checking !!
-	DIALOG --msgbox "${_instsyslinuxsuccess}" 0 0
+sl_bootdir=$(df -kT $DESTDIR/boot | grep $DESTDIR)
+sl_bootdir_dev=$(echo ${sl_bootdir} | awk '{print $1}' | awk -F/ '{print $NF}')
+sl_bootdir_fs=$(echo ${sl_bootdir} | awk '{print $2}')
+case "$sl_bootdir_fs" in
+  ext[2-4]) 
+    syslinux-install_update -iam -c $DESTDIR && sed -i "s/sda3/$sl_bootdir_dev/g" ${DESTDIR}/boot/syslinux/syslinux.cfg
+    $EDITOR /$DESTDIR/boot/syslinux/syslinux.cfg
+    DIALOG --msgbox "${_instsyslinuxsuccess}" 0 0
+    ;;
+  *) 
+    echo ${_syslinuxwrongfs}
+    read && return 1
+    ;;
+esac
 }
 
 # set_clock()
@@ -1120,8 +1131,6 @@ configure_system()
             "/etc/modprobe.d/modprobe.conf" "${_modprobeconftext}" \
             "/etc/resolv.conf"          "${_resolvconftext}" \
             "/etc/hosts"                "${_hoststext}" \
-            "/etc/hosts.deny"           "${_hostsdenytext}" \
-            "/etc/hosts.allow"          "${_hostsallowtext}" \
             "/etc/X11/xorg.conf.d/01-keyboard-layout.conf"		"${_xorgkblayouttext}" \
             "/etc/locale.gen"           "${_localegentext}" \
             "/etc/pacman.d/mirrorlist"  "${_mirrorlisttext}" \
