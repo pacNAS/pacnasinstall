@@ -1103,7 +1103,7 @@ mainmenu()
         ;;
         "4")
 				# for testing.  Hash out the line below for normal operation
-            _system_is_installed=1
+            #_system_is_installed=1
             if [ "$_system_is_installed" == "1" ];then
              configure_system;_system_is_configured=1
             else 
