@@ -17,10 +17,4 @@ rebooting to make sure grub installed correctly.
 
 Added an syslinux option to installer, very much work in progress.
 
-TODO:
-
-Error checking /tmp/grub.log for completed grub-bios install
-
-Test Syslinux install possibly add default syslinux.conf
-
-
+Removed menu variables to a lib file to allow for additional language versions.
