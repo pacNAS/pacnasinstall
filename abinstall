@@ -9,6 +9,7 @@
 #	      		     | removed variables to a source file
 # Version 1.40  | 23-08-2012 | removed circular dependency of locale and dialog file
 #                            | added -i and -c option to bypass installation and config
+# Version 1.41  | 24-08-2012 | edit for syslinux to find root device, remove second getopts... 
  
 ANSWER="/tmp/.setup"
 # use the first VT not dedicated to a running console
@@ -799,9 +800,11 @@ cat $DESTDIR/tmp/grub.log >$LOG
 
 syslinux_install()
 {
-sl_bootdir=$(df -kT $DESTDIR/boot | grep $DESTDIR)
+# Changed to root device, might edit variables once working
+sl_bootdir=$(df -kT $DESTDIR | grep $DESTDIR)
 sl_bootdir_dev=$(echo ${sl_bootdir} | awk '{print $1}' | awk -F/ '{print $NF}')
 sl_bootdir_fs=$(echo ${sl_bootdir} | awk '{print $2}')
+# Todo add UUID for root device 
 case "$sl_bootdir_fs" in
   ext[2-4]) 
     syslinux-install_update -iam -c $DESTDIR && sed -i "s/sda3/$sl_bootdir_dev/g" ${DESTDIR}/boot/syslinux/syslinux.cfg
@@ -897,25 +900,6 @@ installer_locale()
     esac
   [[ ! -s $ANSWER ]] && exit 1
 }
-
-TMPGETOPT=$(getopt -o ic --long system_installed,system_configured -n $0 -- "$@")
-
-if [ $? != 0 ]; then 
-  echo "Terminating..." >&2
-  exit 1
-fi
-
-eval set -- "$TMPGETOPT"
-
-while true
-do
-  case "$1" in
-    -i|--system_installed) touch /tmp/.SI_BYPASS; SI_BYPASS=1; shift;;
-    -c|--system_configured) touch /tmp/.SC_BYPASS; SC_BYPASS=1; shift;; 
-    --) shift; break;;
-    *) echo "What is happening?!?"; exit 1;;
-  esac
-done
 
 prepare_harddrive()
 {
