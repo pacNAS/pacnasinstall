@@ -5,9 +5,11 @@
 #			     | removed entries for hosts.[allow|deny]
 #			     | removed mention of wicd
 #			     | removed pause before cp_install
-# Version 1.34 | 23-08-2012 | added locales function
-#					| removed variables to a source file
-
+# Version 1.34  | 23-08-2012 | added locales function
+#	      		     | removed variables to a source file
+# Version 1.40  | 23-08-2012 | removed circular dependency of locale and dialog file
+#                            | added -i and -c option to bypass installation and config
+ 
 ANSWER="/tmp/.setup"
 # use the first VT not dedicated to a running console
 LOG="/dev/tty6"
@@ -47,6 +49,27 @@ S_INSTALL=0     # package installation
 S_CONFIG=0      # configuration editing
 S_GRUB=0        # TODO: kill this - if using grub
 S_BOOT=""       # bootloader installed (set to loader name instead of 1)
+
+
+# Get options - has to be outside a function to read the $0 properly (doesn't it?)
+TMPGETOPT=$(getopt -o ic --long system_installed,system_configured -n $0 -- "$@")
+
+if [ $? != 0 ]; then 
+  echo "Terminating..." >&2
+  exit 1
+fi
+
+eval set -- "$TMPGETOPT"
+
+while true
+do
+  case "$1" in
+    -i|--system_installed) SI_BYPASS=1; shift;;
+    -c|--system_configured) SC_BYPASS=1; shift;; 
+    --) shift; break;;
+    *) echo "What is happening?!?"; exit 1;;
+  esac
+done
 
 
 # main menu selection tracker
@@ -862,16 +885,38 @@ set_clock()
 
 installer_locale()
 {
-	DIALOG --menu "${_localemenu}" 12 60 5 \
-	    "1" "English" 2>$ANSWER
-	LOCALE="$(cat $ANSWER)"
-	case $(cat $ANSWER) in
-	    "1")
-	         . abinstall_msg.en ;;
-	    *)
-	        DONE=1
-	esac
+  dialog --backtitle "archbang.org" --radiolist "Choose your language:" 15 40 5 \
+    1 English on \
+    2 American off \
+    2>$ANSWER 
+
+    case $(cat $ANSWER) in
+      "1") . ./abinstall_msg.en;;
+      "2") . ./abinstall_msg.en;;
+      *) DONE=1;;
+    esac
+  [[ ! -s $ANSWER ]] && exit 1
 }
+
+TMPGETOPT=$(getopt -o ic --long system_installed,system_configured -n $0 -- "$@")
+
+if [ $? != 0 ]; then 
+  echo "Terminating..." >&2
+  exit 1
+fi
+
+eval set -- "$TMPGETOPT"
+
+while true
+do
+  case "$1" in
+    -i|--system_installed) touch /tmp/.SI_BYPASS; SI_BYPASS=1; shift;;
+    -c|--system_configured) touch /tmp/.SC_BYPASS; SC_BYPASS=1; shift;; 
+    --) shift; break;;
+    *) echo "What is happening?!?"; exit 1;;
+  esac
+done
+
 prepare_harddrive()
 {
     S_MKFSAUTO=0
@@ -1102,8 +1147,7 @@ mainmenu()
             fi
         ;;
         "4")
-				# for testing.  Hash out the line below for normal operation
-            #_system_is_installed=1
+  	    [[ $SI_BYPASS = 1 ]] && _system_is_installed=1
             if [ "$_system_is_installed" == "1" ];then
              configure_system;_system_is_configured=1
             else 
@@ -1112,6 +1156,7 @@ mainmenu()
             fi
         ;;
         "5")
+  	    [[ $SC_BYPASS = 1 ]] && _system_is_configured=1
             if [ "$_system_is_configured" == "1" ];then
              install_bootloader
             else
@@ -1136,8 +1181,8 @@ mainmenu()
 #####################
 ## begin execution ##
 
-DIALOG --msgbox "${_instwelcomemessage}" 12 65
 installer_locale
+DIALOG --msgbox "${_instwelcomemessage}" 12 65
 while true; do
     mainmenu
 done
