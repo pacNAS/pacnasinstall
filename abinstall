@@ -10,6 +10,7 @@
 # Version 1.40  | 23-08-2012 | removed circular dependency of locale and dialog file
 #                            | added -i and -c option to bypass installation and config
 # Version 1.41  | 24-08-2012 | edit for syslinux to find root device, remove second getopts... 
+# Version 1.42  | 25-08-2012  | add root device variables for syslinux, commented out first mkinitcpio's
  
 ANSWER="/tmp/.setup"
 # use the first VT not dedicated to a running console
@@ -801,13 +802,15 @@ cat $DESTDIR/tmp/grub.log >$LOG
 syslinux_install()
 {
 # Changed to root device, might edit variables once working
-sl_bootdir=$(df -kT $DESTDIR | grep $DESTDIR)
+sl_bootdir=$(df -kT $DESTDIR/boot | grep $DESTDIR)
+sl_rootdir=$(df -kT $DESTDIR | grep $DESTDIR)
+sl_rootdir_dev=$(echo ${sl_rootdir} | awk '{print $1}' | awk -F/ '{print $NF}')
 sl_bootdir_dev=$(echo ${sl_bootdir} | awk '{print $1}' | awk -F/ '{print $NF}')
 sl_bootdir_fs=$(echo ${sl_bootdir} | awk '{print $2}')
 # Todo add UUID for root device 
 case "$sl_bootdir_fs" in
   ext[2-4]) 
-    syslinux-install_update -iam -c $DESTDIR && sed -i "s/sda3/$sl_bootdir_dev/g" ${DESTDIR}/boot/syslinux/syslinux.cfg
+    syslinux-install_update -iam -c $DESTDIR && sed -i "s/sda3/$sl_rootdir_dev/g" ${DESTDIR}/boot/syslinux/syslinux.cfg
     $EDITOR /$DESTDIR/boot/syslinux/syslinux.cfg
     DIALOG --msgbox "${_instsyslinuxsuccess}" 0 0
     ;;
@@ -1018,8 +1021,8 @@ configure_system()
 		chroot ${DESTDIR} sed -i 's/^exec.*openbox-session$/exec dbus-launch openbox-session/' /home/live/.xinitrc &>/dev/null
                 chroot ${DESTDIR} /root/mvuser.sh
                 rm $DESTDIR/root/mvuser.sh
-                mkinitcpio -k /run/archiso/bootmnt/arch/boot/${arch}/vmlinuz -c /etc/mkinitcpio.conf -g ${DESTDIR}/boot/initramfs-linux.img
-                mkinitcpio -k /run/archiso/bootmnt/arch/boot/${arch}/vmlinuz -c /etc/mkinitcpio.conf -g ${DESTDIR}/boot/initramfs-linux-fallback.img
+         #       mkinitcpio -k /run/archiso/bootmnt/arch/boot/${arch}/vmlinuz -c /etc/mkinitcpio.conf -g ${DESTDIR}/boot/initramfs-linux.img
+            #    mkinitcpio -k /run/archiso/bootmnt/arch/boot/${arch}/vmlinuz -c /etc/mkinitcpio.conf -g ${DESTDIR}/boot/initramfs-linux-fallback.img
                 cp /run/archiso/bootmnt/arch/boot/${arch}/vmlinuz ${DESTDIR}/boot/vmlinuz-linux
         elif [ "$CURRENT_SELECTION" = "Config-system" ]; then
     while true; do
