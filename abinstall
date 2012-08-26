@@ -11,6 +11,7 @@
 #                            | added -i and -c option to bypass installation and config
 # Version 1.41  | 24-08-2012 | edit for syslinux to find root device, remove second getopts... 
 # Version 1.42  | 25-08-2012  | add root device variables for syslinux, commented out first mkinitcpio's
+# Version 1.43  | 26-08-2012 | applies test patch for options system-config and install (or)
  
 ANSWER="/tmp/.setup"
 # use the first VT not dedicated to a running console
@@ -1134,8 +1135,7 @@ mainmenu()
             fi
         ;;
         "4")
-  	    [[ $SI_BYPASS = 1 ]] && _system_is_installed=1
-            if [ "$_system_is_installed" == "1" ];then
+            if [ "$_system_is_installed" == "1" ] || [ $SI_BYPASS = 1 ]; then
              configure_system;_system_is_configured=1
             else 
              echo "$_forgotinstalling"
@@ -1143,8 +1143,7 @@ mainmenu()
             fi
         ;;
         "5")
-  	    [[ $SC_BYPASS = 1 ]] && _system_is_configured=1
-            if [ "$_system_is_configured" == "1" ];then
+            if [ "$_system_is_configured" == "1" ] || [ $SC_BYPASS = 1 ]; then
              install_bootloader
             else
              echo "$_forgotsystemconf"
