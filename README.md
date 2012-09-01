@@ -14,14 +14,13 @@ Open a terminal then:
 
 `sudo ./abinstall`
 
-
 Currently working on grub-bios install, check /tmp/grub.log prior to 
 rebooting to make sure grub installed correctly.
 
 Added an syslinux option to installer, very much work in progress.
+**Warning syslinux currently asks 'Enter options' this is purely optional and will need improving!**
 
 Removed menu variables to a lib file to allow for additional language versions.
 
-For testing purposes we have now a -i [skip install] -c [skip configuration]
+For all options run 'sudo ./abinstall -h' 
 
-These options assume you have an installation on target device.
