@@ -18,6 +18,7 @@ Currently working on grub-bios install, check /tmp/grub.log prior to
 rebooting to make sure grub installed correctly.
 
 Added an syslinux option to installer, very much work in progress.
+
 **Warning syslinux currently asks 'Enter options' this is purely optional and will need improving!**
 
 Removed menu variables to a lib file to allow for additional language versions.
