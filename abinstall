@@ -12,14 +12,60 @@
 # Version 1.41  | 24-08-2012 | edit for syslinux to find root device, remove second getopts... 
 # Version 1.42  | 25-08-2012  | add root device variables for syslinux, commented out first mkinitcpio's
 # Version 1.43  | 26-08-2012 | applies test patch for options system-config and install (or)
- 
-ANSWER="/tmp/.setup"
-# use the first VT not dedicated to a running console
-LOG="/dev/tty6"
-mkdir /mnt/install
-DESTDIR="/mnt/install"
-arch=$(uname -m)
+
+# some variables that might be modified by options
+SI_BYPASS=0
+SC_BYPASS=0
 EDITOR="nano"
+DESTDIR=/mnt/install
+
+
+# help for options
+options_usage() {
+echo
+echo "usage: `basename $0` [ -h -i -c ] [ -d <destdir> ] [ -e <editor> ]"
+echo
+echo "  -h | --help 			What options are available in this script"
+echo "  -d | --destdir 		Installation directory (defaults to /mnt/install)"	
+echo "  -e | --editor 		Which editor to use - must be preinstalled (defaults to nano)"
+echo "  -i | --system_installed	Bypass the 'installation' section of the installer"
+echo "  -c | --system_configured	Bypass the 'configuration' section of the installer"
+echo 
+echo "Options -i and -c are useful if you've already installed and want to test a change to the installer"
+echo
+}
+
+# Get the options and possibly overwrite the variables set at the top
+
+TMPGETOPT=$(getopt -o cd:e:hi --long system_configured,destdir:,editor:,help,system_installed -n $0 -- "$@")
+
+if [ $? != 0 ]; then 
+  echo "Terminating..." >&2
+  options_usage
+  exit 1
+fi
+
+eval set -- "$TMPGETOPT"
+
+while true
+do
+  case "$1" in
+    -c|--system_configured) SC_BYPASS=1; shift;; 
+    -d|--destdir) DESTDIR=$2; shift 2;;
+    -e|--editor) EDITOR=$2; shift 2;;
+    -h|--help) 	options_usage; exit 1;;
+    -i|--system_installed) SI_BYPASS=1; shift;;
+    --) shift; break;;
+    *) options_usage; exit 1;;
+  esac
+done
+#  Done with options
+
+ 
+ANSWER="/tmp/.setup"		# dialog answer
+LOG="/dev/tty6"			# use the first VT not dedicated to a running console
+mkdir -p $DESTDIR		# install directory		
+arch=$(uname -m)		# archicture
 
 # abstract the common pacman args
 PACMAN="pacman --root ${DESTDIR} --config /tmp/pacman.conf --noconfirm --noprogressbar"
@@ -50,30 +96,6 @@ S_MKFSAUTO=0    # auto fs part/formatting TODO: kill this
 S_SELECT=0      # package selection
 S_INSTALL=0     # package installation
 S_CONFIG=0      # configuration editing
-S_GRUB=0        # TODO: kill this - if using grub
-S_BOOT=""       # bootloader installed (set to loader name instead of 1)
-
-
-# Get options - has to be outside a function to read the $0 properly (doesn't it?)
-TMPGETOPT=$(getopt -o ic --long system_installed,system_configured -n $0 -- "$@")
-
-if [ $? != 0 ]; then 
-  echo "Terminating..." >&2
-  exit 1
-fi
-
-eval set -- "$TMPGETOPT"
-
-while true
-do
-  case "$1" in
-    -i|--system_installed) SI_BYPASS=1; shift;;
-    -c|--system_configured) SC_BYPASS=1; shift;; 
-    --) shift; break;;
-    *) echo "What is happening?!?"; exit 1;;
-  esac
-done
-
 
 # main menu selection tracker
 CURRENT_SELECTION=""
@@ -742,6 +764,12 @@ auto_fstab()
     fi
 }
 
+
+# Get any optional bootloader options
+get_bl_options() {
+DIALOG --inputbox "Enter options" 8 50 2>$ANSWER || return 1		# need to modify the locale
+}
+
 # This is my new install for grub-bios [ will upload original function ]
 # Will need a way to check grub.cfg although you cannot edit it directly 
 grub-bios() {
@@ -797,22 +825,23 @@ cat $DESTDIR/tmp/grub.log >$LOG
     fi
 
     DIALOG --msgbox "${_instgrubsuccess}" 0 0
-    S_GRUB=1
 }
 
 syslinux_install()
 {
-# Changed to root device, might edit variables once working
-sl_bootdir=$(df -kT $DESTDIR/boot | grep $DESTDIR)
-sl_rootdir=$(df -kT $DESTDIR | grep $DESTDIR)
-sl_rootdir_dev=$(echo ${sl_rootdir} | awk '{print $1}' | awk -F/ '{print $NF}')
-sl_bootdir_dev=$(echo ${sl_bootdir} | awk '{print $1}' | awk -F/ '{print $NF}')
-sl_bootdir_fs=$(echo ${sl_bootdir} | awk '{print $2}')
-# Todo add UUID for root device 
+sl_bootdir_fs=$(df -kT $DESTDIR/boot | grep $DESTDIR | awk '{print $2}')
+echo $sl_bootdir_fs > slbootdirfs
+
 case "$sl_bootdir_fs" in
   ext[2-4]) 
-    syslinux-install_update -iam -c $DESTDIR && sed -i "s/sda3/$sl_rootdir_dev/g" ${DESTDIR}/boot/syslinux/syslinux.cfg
-    $EDITOR /$DESTDIR/boot/syslinux/syslinux.cfg
+    sl_rootdir_dev=$(df -kT $DESTDIR | grep $DESTDIR | awk '{print $1}')
+    sl_rootdir_uuid=$(lsblk -fn $sl_rootdir_dev | awk '{print $3}')
+    get_bl_options
+    local bootloader_options=$(cat $ANSWER)
+    syslinux-install_update -iam -c $DESTDIR && \
+      sed -i "s|/dev/sda3|UUID=$sl_rootdir_uuid|g" ${DESTDIR}/boot/syslinux/syslinux.cfg
+    [ ! -z "$local bootloader_options" ] && sed -i "/.*APPEND.*/s/$/ $bootloader_options/" ${DESTDIR}/boot/syslinux/syslinux.cfg
+    $EDITOR $DESTDIR/boot/syslinux/syslinux.cfg
     DIALOG --msgbox "${_instsyslinuxsuccess}" 0 0
     ;;
   *) 
