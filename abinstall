@@ -12,6 +12,7 @@
 # Version 1.41  | 24-08-2012 | edit for syslinux to find root device, remove second getopts... 
 # Version 1.42  | 25-08-2012  | add root device variables for syslinux, commented out first mkinitcpio's
 # Version 1.43  | 26-08-2012 | applies test patch for options system-config and install (or)
+# Version 1.44  | 03-09-2012 | Removed EOF from grub-bios
 
 # some variables that might be modified by options
 SI_BYPASS=0
@@ -36,7 +37,6 @@ echo
 }
 
 # Get the options and possibly overwrite the variables set at the top
-
 TMPGETOPT=$(getopt -o cd:e:hi --long system_configured,destdir:,editor:,help,system_installed -n $0 -- "$@")
 
 if [ $? != 0 ]; then 
@@ -798,15 +798,12 @@ DEVS=$(finddisks _)
     
 chroot_mount
 
-# Currently set /dev/sda need to change too "$(cat $ANSWER)" or better!
-chroot ${DESTDIR} << EOF
-modprobe dm-mod
-grub-install --target=i386-pc --recheck --debug "$(cat $ANSWER)" > /tmp/grub.log
-mkdir -p /boot/grub/locale
-cp /usr/share/locale/en\@quot/LC_MESSAGES/grub.mo /boot/grub/locale/en.mo
-grub-mkconfig -o /boot/grub/grub.cfg
-sync
-EOF
+chroot ${DESTDIR} modprobe dm-mod
+chroot ${DESTDIR} grub-install --target=i386-pc --recheck --debug "$(cat $ANSWER)" > /tmp/grub.log
+chroot ${DESTDIR} mkdir -p /boot/grub/locale
+chroot ${DESTDIR} cp /usr/share/locale/en\@quot/LC_MESSAGES/grub.mo /boot/grub/locale/en.mo
+chroot ${DESTDIR} grub-mkconfig -o /boot/grub/grub.cfg >> /tmp/grub.log
+chroot ${DESTDIR} sync
 
 chroot_umount
 
@@ -1051,8 +1048,6 @@ configure_system()
 		chroot ${DESTDIR} sed -i 's/^exec.*openbox-session$/exec dbus-launch openbox-session/' /home/live/.xinitrc &>/dev/null
                 chroot ${DESTDIR} /root/mvuser.sh
                 rm $DESTDIR/root/mvuser.sh
-         #       mkinitcpio -k /run/archiso/bootmnt/arch/boot/${arch}/vmlinuz -c /etc/mkinitcpio.conf -g ${DESTDIR}/boot/initramfs-linux.img
-            #    mkinitcpio -k /run/archiso/bootmnt/arch/boot/${arch}/vmlinuz -c /etc/mkinitcpio.conf -g ${DESTDIR}/boot/initramfs-linux-fallback.img
                 cp /run/archiso/bootmnt/arch/boot/${arch}/vmlinuz ${DESTDIR}/boot/vmlinuz-linux
         elif [ "$CURRENT_SELECTION" = "Config-system" ]; then
     while true; do
