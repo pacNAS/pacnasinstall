@@ -13,6 +13,7 @@
 # Version 1.42  | 25-08-2012  | add root device variables for syslinux, commented out first mkinitcpio's
 # Version 1.43  | 26-08-2012 | applies test patch for options system-config and install (or)
 # Version 1.44  | 03-09-2012 | Removed EOF from grub-bios
+# Version 1.45  | 05-09-2012 | Added bootloader options
 
 # some variables that might be modified by options
 SI_BYPASS=0
@@ -767,7 +768,8 @@ auto_fstab()
 
 # Get any optional bootloader options
 get_bl_options() {
-DIALOG --inputbox "Enter options" 8 50 2>$ANSWER || return 1		# need to modify the locale
+DIALOG --inputbox "${_get_bootloader_options}" 8 50 2>$ANSWER || return 1
+bootloader_options=$(cat $ANSWER)
 }
 
 # This is my new install for grub-bios [ will upload original function ]
@@ -780,6 +782,11 @@ DEVS=$(finddisks _)
         DIALOG --msgbox "${_nohdfound}" 0 0
         return 1
     fi
+    # This has to be before the _whereinststage1 dialog because chroot uses $ANSWER later on
+    # It could be moved if we change the the redirection of the output to ANSWER2 (or whatever)
+    # Uses | for sed delimiters in case there's a reason that / could be used in bootloader options
+    get_bl_options
+    [ ! -z "${bootloader_options}" ] && sed -i "s|^GRUB_CMDLINE_LINUX=.*|GRUB_CMDLINE_LINUX=\"$bootloader_options\"|" ${DESTDIR}/etc/default/grub
     DIALOG --menu "${_whereinststage1}" 14 55 7 $DEVS 2>$ANSWER || return 1
     ROOTDEV=$(cat $ANSWER)
     DIALOG --infobox "${_installinggrub}" 3 30
@@ -795,7 +802,6 @@ DEVS=$(finddisks _)
       unfreezeroot=y
      fi
     fi
-    
 chroot_mount
 
 chroot ${DESTDIR} modprobe dm-mod
@@ -827,17 +833,16 @@ cat $DESTDIR/tmp/grub.log >$LOG
 syslinux_install()
 {
 sl_bootdir_fs=$(df -kT $DESTDIR/boot | grep $DESTDIR | awk '{print $2}')
-echo $sl_bootdir_fs > slbootdirfs
 
 case "$sl_bootdir_fs" in
   ext[2-4]) 
     sl_rootdir_dev=$(df -kT $DESTDIR | grep $DESTDIR | awk '{print $1}')
     sl_rootdir_uuid=$(lsblk -fn $sl_rootdir_dev | awk '{print $3}')
     get_bl_options
-    local bootloader_options=$(cat $ANSWER)
     syslinux-install_update -iam -c $DESTDIR && \
       sed -i "s|/dev/sda3|UUID=$sl_rootdir_uuid|g" ${DESTDIR}/boot/syslinux/syslinux.cfg
-    [ ! -z "$local bootloader_options" ] && sed -i "/.*APPEND.*/s/$/ $bootloader_options/" ${DESTDIR}/boot/syslinux/syslinux.cfg
+    [ ! -z "$bootloader_options" ] && sed -i "/\t.*APPEND.*/s|$| $bootloader_options|" ${DESTDIR}/boot/syslinux/syslinux.cfg 
+    sleep 2
     $EDITOR $DESTDIR/boot/syslinux/syslinux.cfg
     DIALOG --msgbox "${_instsyslinuxsuccess}" 0 0
     ;;

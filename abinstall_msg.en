@@ -140,4 +140,4 @@ installation."
   _forgotinstalling="Installing before configuring would seem more logical. Press enter."
   _forgotpreparehd="Prepare HD first or mount what you want in /mnt/install and type "perso" here. Press enter."
   _localemenu="Select a locale for the installer"
-
+  _get_bootloader_options="<Optional> - Enter any bootloader options now.  If none are required, leave blank or hit cancel"
