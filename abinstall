@@ -13,7 +13,7 @@
 # Version 1.42  | 25-08-2012  | add root device variables for syslinux, commented out first mkinitcpio's
 # Version 1.43  | 26-08-2012 | applies test patch for options system-config and install (or)
 # Version 1.44  | 03-09-2012 | Removed EOF from grub-bios
-# Version 1.45  | 05-09-2012 | Added bootloader options
+# Version 1.45  | 05-09-2012 | Added bootloader options, changed grub-bios again!!!
 
 # some variables that might be modified by options
 SI_BYPASS=0
@@ -802,15 +802,17 @@ DEVS=$(finddisks _)
       unfreezeroot=y
      fi
     fi
+   
+chroot_mount
     
 modprobe dm-mod
-grub-install --directory=$DESTDIR/usr/lib/grub/i386-pc \
-				 --target=i386-pc --boot-directory=$DESTDIR/boot \
-				 --recheck --debug "$(cat $ANSWER)" > /tmp/grub.log 2>&1
+chroot $DESTDIR /usr/sbin/grub-install --target=i386-pc --recheck --debug "$(cat $ANSWER)" > /tmp/grub.log 2>&1
 mkdir -p $DESTDIR/boot/grub/locale
 cp $DESTDIR/usr/share/locale/en\@quot/LC_MESSAGES/grub.mo $DESTDIR/boot/grub/locale/en.mo
-grub-mkconfig -o $DESTDIR/boot/grub/grub.cfg > /dev/null 2>&1
+chroot $DESTDIR /usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg > /dev/null 2>&1
 sync
+
+chroot_umount
 
 	# unfreeze xfs filesystems if any
     if [ -x /usr/sbin/xfs_freeze ]; then
