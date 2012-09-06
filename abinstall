@@ -1196,7 +1196,10 @@ mainmenu()
 
 #####################
 ## begin execution ##
-
+if [ $EUID != 0 ] ; then
+  echo "Must sudo or be root.  Terminating..." >&2
+  exit 1
+fi
 installer_locale
 DIALOG --msgbox "${_instwelcomemessage}" 12 65
 while true; do
