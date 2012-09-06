@@ -14,7 +14,7 @@
 # Version 1.43  | 26-08-2012 | applies test patch for options system-config and install (or)
 # Version 1.44  | 03-09-2012 | Removed EOF from grub-bios
 # Version 1.45  | 05-09-2012 | Added bootloader options, changed grub-bios again!!!
-
+# Version 1.46  | 06-09-2012 | Minor move of kernel copy line
 # some variables that might be modified by options
 SI_BYPASS=0
 SC_BYPASS=0
@@ -1054,7 +1054,7 @@ configure_system()
 		chroot ${DESTDIR} sed -i 's/^exec.*openbox-session$/exec dbus-launch openbox-session/' /home/live/.xinitrc &>/dev/null
                 chroot ${DESTDIR} /root/mvuser.sh
                 rm $DESTDIR/root/mvuser.sh
-                cp /run/archiso/bootmnt/arch/boot/${arch}/vmlinuz ${DESTDIR}/boot/vmlinuz-linux
+                
         elif [ "$CURRENT_SELECTION" = "Config-system" ]; then
     while true; do
         if [ -n "$CURRENT_SELECTION" ]; then
@@ -1086,8 +1086,8 @@ configure_system()
             $EDITOR ${DESTDIR}${CURRENT_SELECTION}
         fi
   done
-
-    ## POSTPROCESSING ##
+	## POSTPROCESSING
+    cp /run/archiso/bootmnt/arch/boot/${arch}/vmlinuz ${DESTDIR}/boot/vmlinuz-linux
     run_mkinitcpio
     # /etc/locale.gen
     #
