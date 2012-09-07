@@ -15,7 +15,17 @@
 # Version 1.44  | 03-09-2012 | Removed EOF from grub-bios
 # Version 1.45  | 05-09-2012 | Added bootloader options, changed grub-bios again!!!
 # Version 1.46  | 06-09-2012 | Minor move of kernel copy line
+# Version 1.47  | 07-09/2012 | Moved root id check and grub install test... & start addition of version
+
 # some variables that might be modified by options
+
+## Check if running as sudo/root ##
+if [ $EUID != 0 ] ; then
+  echo "Must sudo or be root.  Terminating..." >&2
+  exit 1
+fi
+
+VER="1.47 | 07-09-2012 | Moved root id check and grub install test..."
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -38,6 +48,8 @@ echo
 }
 
 # Get the options and possibly overwrite the variables set at the top
+# Add -v version using $VER
+#-v|--VER) <do stuff>; ;; possibly echo $VER then exit ???
 TMPGETOPT=$(getopt -o cd:e:hi --long system_configured,destdir:,editor:,help,system_installed -n $0 -- "$@")
 
 if [ $? != 0 ]; then 
@@ -821,9 +833,8 @@ chroot_umount
     fi
 
 cat /tmp/grub.log >$LOG
-# This needs checking for Error message think this is from grub-legacy!
-# check if file exists?
-	 if grep "Error [0-9]*: " /tmp/grub.log >/dev/null; then
+# Check to see if grub installed correctly ! not there then exit
+	 if ! grep "Installation finished. No error reported" /tmp/grub.log >/dev/null; then
         DIALOG --msgbox "${_errorinstgrub} (${_errordetails} $LOG)" 0 0
         return 1
     fi
@@ -1194,12 +1205,6 @@ mainmenu()
     esac
 }
 
-#####################
-## begin execution ##
-if [ $EUID != 0 ] ; then
-  echo "Must sudo or be root.  Terminating..." >&2
-  exit 1
-fi
 installer_locale
 DIALOG --msgbox "${_instwelcomemessage}" 12 65
 while true; do
