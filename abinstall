@@ -1,23 +1,4 @@
 #!/bin/bash
-# 
-# Version 1.32  | 16-08-2012 | grub-bios install
-# Version 1.33  | 21-08-2012 | added error checking to syslinux
-#			     | removed entries for hosts.[allow|deny]
-#			     | removed mention of wicd
-#			     | removed pause before cp_install
-# Version 1.34  | 23-08-2012 | added locales function
-#	      		     | removed variables to a source file
-# Version 1.40  | 23-08-2012 | removed circular dependency of locale and dialog file
-#                            | added -i and -c option to bypass installation and config
-# Version 1.41  | 24-08-2012 | edit for syslinux to find root device, remove second getopts... 
-# Version 1.42  | 25-08-2012  | add root device variables for syslinux, commented out first mkinitcpio's
-# Version 1.43  | 26-08-2012 | applies test patch for options system-config and install (or)
-# Version 1.44  | 03-09-2012 | Removed EOF from grub-bios
-# Version 1.45  | 05-09-2012 | Added bootloader options, changed grub-bios again!!!
-# Version 1.46  | 06-09-2012 | Minor move of kernel copy line
-# Version 1.47  | 07-09/2012 | Moved root id check and grub install test... & start addition of version
-
-# some variables that might be modified by options
 
 ## Check if running as sudo/root ##
 if [ $EUID != 0 ] ; then
@@ -25,7 +6,9 @@ if [ $EUID != 0 ] ; then
   exit 1
 fi
 
-VER="1.47 | 07-09-2012 | Moved root id check and grub install test..."
+# some variables that might be modified by options
+
+VER="1.49 | 10-09-2012 | sed for rc.conf, then removed it from /srv.. -v arg "
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -35,13 +18,14 @@ DESTDIR=/mnt/install
 # help for options
 options_usage() {
 echo
-echo "usage: `basename $0` [ -h -i -c ] [ -d <destdir> ] [ -e <editor> ]"
+echo "usage: `basename $0` [ -h -i -c -v ] [ -d <destdir> ] [ -e <editor> ]"
 echo
 echo "  -h | --help 			What options are available in this script"
 echo "  -d | --destdir 		Installation directory (defaults to /mnt/install)"	
 echo "  -e | --editor 		Which editor to use - must be preinstalled (defaults to nano)"
 echo "  -i | --system_installed	Bypass the 'installation' section of the installer"
 echo "  -c | --system_configured	Bypass the 'configuration' section of the installer"
+echo "  -v | --version     Display current abinstall version
 echo 
 echo "Options -i and -c are useful if you've already installed and want to test a change to the installer"
 echo
@@ -50,7 +34,7 @@ echo
 # Get the options and possibly overwrite the variables set at the top
 # Add -v version using $VER
 #-v|--VER) <do stuff>; ;; possibly echo $VER then exit ???
-TMPGETOPT=$(getopt -o cd:e:hi --long system_configured,destdir:,editor:,help,system_installed -n $0 -- "$@")
+TMPGETOPT=$(getopt -o cvd:e:hi --long system_configured,version,destdir:,editor:,help,system_installed -n $0 -- "$@")
 
 if [ $? != 0 ]; then 
   echo "Terminating..." >&2
@@ -68,6 +52,7 @@ do
     -e|--editor) EDITOR=$2; shift 2;;
     -h|--help) 	options_usage; exit 1;;
     -i|--system_installed) SI_BYPASS=1; shift;;
+    -v|--version) echo $VER; exit 1;;
     --) shift; break;;
     *) options_usage; exit 1;;
   esac
@@ -757,7 +742,9 @@ cp -a /src/rc.local ${DESTDIR}/etc/rc.local &>/dev/null
 cp -a /src/rc.shutdown ${DESTDIR}/etc/rc.shutdown &>/dev/null
 cp /src/inittab ${DESTDIR}/etc/inittab &>/dev/null
 cp /etc/X11/xorg.conf.d/20-gpudriver.conf ${DESTDIR}/etc/X11/xorg.conf.d/20-gpudriver.conf &>/dev/null
-cp -a /src/rc.conf ${DESTDIR}/etc/rc.conf &>/dev/null
+# removed from /src/rc.conf 
+#cp -a /src/rc.conf ${DESTDIR}/etc/rc.conf &>/dev/null
+sed -i '/. \/etc\/lastmin/d' $DESTDIR/etc/rc.conf
 }
 
 # auto_fstab()
@@ -832,7 +819,7 @@ chroot_umount
      [ -z "$unfreezeroot" ] && /usr/sbin/xfs_freeze -u $DESTDIR/ > /dev/null 2>&1
     fi
 
-cat /tmp/grub.log >$LOG
+cat $DESTDIR/tmp/grub.log >$LOG
 # Check to see if grub installed correctly ! not there then exit
 	 if ! grep "Installation finished. No error reported" $DESTDIR/tmp/grub.log >/dev/null; then
         DIALOG --msgbox "${_errorinstgrub} (${_errordetails} $LOG)" 0 0
