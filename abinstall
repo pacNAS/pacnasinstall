@@ -821,7 +821,7 @@ chroot_umount
 
 cat $DESTDIR/tmp/grub.log >$LOG
 # Check to see if grub installed correctly ! not there then exit
-	 if ! grep "Installation finished. No error reported" $DESTDIR/tmp/grub.log >/dev/null; then
+	 if [ -z $(grep "Installation finished. No error reported" $DESTDIR/tmp/grub.log) ]; then
         DIALOG --msgbox "${_errorinstgrub} (${_errordetails} $LOG)" 0 0
         return 1
     fi
