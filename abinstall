@@ -25,7 +25,7 @@ echo "  -d | --destdir 		Installation directory (defaults to /mnt/install)"
 echo "  -e | --editor 		Which editor to use - must be preinstalled (defaults to nano)"
 echo "  -i | --system_installed	Bypass the 'installation' section of the installer"
 echo "  -c | --system_configured	Bypass the 'configuration' section of the installer"
-echo "  -v | --version     Display current abinstall version
+echo "  -v | --version     Display current abinstall version"
 echo 
 echo "Options -i and -c are useful if you've already installed and want to test a change to the installer"
 echo
