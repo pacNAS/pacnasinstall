@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.49 | 10-09-2012 | sed for rc.conf, then removed it from /srv.. -v arg "
+VER="1.50 | 10-09-2012 | changed grub test to $? "
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -806,6 +806,7 @@ chroot_mount
     
 modprobe dm-mod
 chroot $DESTDIR /usr/sbin/grub-install --target=i386-pc --recheck --debug "$(cat $ANSWER)" > /tmp/grub.log 2>&1
+grub_success=$?
 mkdir -p $DESTDIR/boot/grub/locale
 cp $DESTDIR/usr/share/locale/en\@quot/LC_MESSAGES/grub.mo $DESTDIR/boot/grub/locale/en.mo
 chroot $DESTDIR /usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg > /dev/null 2>&1
@@ -821,7 +822,7 @@ chroot_umount
 
 cat $DESTDIR/tmp/grub.log >$LOG
 # Check to see if grub installed correctly ! not there then exit
-	 if [ -z $(grep "Installation finished. No error reported" $DESTDIR/tmp/grub.log) ]; then
+	 if [[ $grub_success != 0 ]]; then
         DIALOG --msgbox "${_errorinstgrub} (${_errordetails} $LOG)" 0 0
         return 1
     fi
