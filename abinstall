@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.50 | 10-09-2012 | changed grub test to $? "
+VER="1.51 | 12-09-2012 | replaced chroot_ with bind_ "
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -106,10 +106,10 @@ DIALOG() {
    return $?
 }
 
-# chroot_mount()
+# bind_mount()
 # prepares target system as a chroot
 #
-chroot_mount()
+bind_mount()
 {
     [ -e "${DESTDIR}/sys" ] || mkdir "${DESTDIR}/sys"
     [ -e "${DESTDIR}/proc" ] || mkdir "${DESTDIR}/proc"
@@ -119,10 +119,10 @@ chroot_mount()
     mount -o bind /dev "${DESTDIR}/dev"
 }
 
-# chroot_umount()
+# bind_umount()
 # tears down chroot in target system
 #
-chroot_umount()
+bind_umount()
 {
     umount $DESTDIR/proc
     umount $DESTDIR/sys
@@ -802,7 +802,7 @@ DEVS=$(finddisks _)
      fi
     fi
    
-chroot_mount
+bind_mount
     
 modprobe dm-mod
 chroot $DESTDIR /usr/sbin/grub-install --target=i386-pc --recheck --debug "$(cat $ANSWER)" > /tmp/grub.log 2>&1
@@ -812,7 +812,7 @@ cp $DESTDIR/usr/share/locale/en\@quot/LC_MESSAGES/grub.mo $DESTDIR/boot/grub/loc
 chroot $DESTDIR /usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg > /dev/null 2>&1
 sync
 
-chroot_umount
+bind_umount
 
 	# unfreeze xfs filesystems if any
     if [ -x /usr/sbin/xfs_freeze ]; then
@@ -971,7 +971,7 @@ prepare_harddrive()
 #
 run_mkinitcpio()
 {
-    chroot_mount
+    bind_mount
     # all mkinitcpio output goes to /tmp/mkinitcpio.log, which we tail
     # into a dialog
     ( \
@@ -994,7 +994,7 @@ run_mkinitcpio()
     done
     kill $(cat $ANSWER)
 
-    chroot_umount
+    bind_umount
 
     # alert the user to fatal errors
     if [ $(cat /tmp/.mkinitcpio-retcode) -ne 0 ]; then
