@@ -744,31 +744,24 @@ net_install()
 	bind_mount
 	mkdir -p $DESTDIR/var/lib/pacman $DESTDIR/var/cache/pacman/pkg
 	# scan package list
-	while true; do
-   pkg_required=$(grep -c ^# packages)
-   if [ -z "$pkg_required" ]; then
+	grep -v '^#' packages > packlist
+	while read pkg_name do
+   if [[ -z $(pacman -Ssq $pkg_name) ]]; then
 		# Grab package required from AUR
-		packer -S --auronly --noconfirm "$pkg_required"
+		packer -S --auronly --noconfirm "$pkg_name"
 		pacman --root $DESTDIR --cachedir $DESTDIR/var/cache/pacman/pkg --noconfirm --needed \
-		-U "$tmppackerdir/$pkg_required/$pkg_required/$pkg_required-*.pkg.tar.xz"
+		-U "$tmppackerdir/$pkg_name/$pkg_name/$pkg_name-*.pkg.tar.xz"
 		pacman_success=$? # possible log file /tmp/pac_pkg.log
 	else
 		# Install from main repos
 		pacman --root $DESTDIR --cachedir $DESTDIR/var/cache/pacman/pkg --noconfirm --needed \
-		-Sy "$pkg_required" # possible log file /tmp/pac_pkg.log
+		-Sy "$pkg_name" # possible log file /tmp/pac_pkg.log
 		pacman_success=$?
 	fi
   
   # check for pkg install and act on result this may need working on
    if [[ $pacman_success == 0 ]]; then
-		break
-   else
-  # not sure about this part might need changing to display /tmp/pac_pkg.log
-    read -p "pacman has some problems. try again? (type 'no' to skip) " retry
-		if [[ "$retry" == no ]]; then
-		echo "stopped pacman"
-		exit
-		fi
+		echo "No errors!"
    fi
 	done
 	bind_umount
