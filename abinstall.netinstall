@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="0.01 | 12-09-2012 | aur pkg install "
+VER="0.02 | 15-09-2012 | aur pkg install "
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -739,30 +739,34 @@ net_install()
 	# Might have to add edit grab and edit mirrorlist
 	# possibly add live user
 	
+	# bring pacman up to date
+	pacman -Syy
 	# Variables & setup
 	tmppackerdir="/tmp/packerbuild-*"
 	bind_mount
 	mkdir -p $DESTDIR/var/lib/pacman $DESTDIR/var/cache/pacman/pkg
 	# scan package list
 	grep -v '^#' packages > packlist
-	while read pkg_name do
-   if [[ -z $(pacman -Ssq $pkg_name) ]]; then
+	while read pkg_name 
+	do
+    if [[ -z $(pacman -Ssq $pkg_name) ]]; then
 		# Grab package required from AUR
 		packer -S --auronly --noconfirm "$pkg_name"
+		# This is where the fun starts
 		pacman --root $DESTDIR --cachedir $DESTDIR/var/cache/pacman/pkg --noconfirm --needed \
 		-U "$tmppackerdir/$pkg_name/$pkg_name/$pkg_name-*.pkg.tar.xz"
 		pacman_success=$? # possible log file /tmp/pac_pkg.log
 	else
 		# Install from main repos
 		pacman --root $DESTDIR --cachedir $DESTDIR/var/cache/pacman/pkg --noconfirm --needed \
-		-Sy "$pkg_name" # possible log file /tmp/pac_pkg.log
+		-S "$pkg_name" # possible log file /tmp/pac_pkg.log
 		pacman_success=$?
 	fi
   
   # check for pkg install and act on result this may need working on
-   if [[ $pacman_success == 0 ]]; then
+    if [[ $pacman_success == 0 ]]; then
 		echo "No errors!"
-   fi
+    fi
 	done < packlist
 	bind_umount
 }
