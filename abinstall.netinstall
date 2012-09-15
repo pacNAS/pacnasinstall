@@ -742,10 +742,11 @@ net_install()
 	# Variables & setup
 	tmppackerdir="/tmp/packerbuild-0"
 	bind_mount
-	mkdir -p $DESTDIR/var/lib/pacman $DESTDIR/var/cache/pacman/pkg
+	mkdir -p $DESTDIR/var/lib/pacman 
+	mkdir -p $DESTDIR/var/cache/pacman/pkg
 	# bring pacman up to date
 	# and grab base packages
-	pacman -Syy base -r $DESTDIR --noconfirm # This needs changing
+	pacman -Sy -r $DESTDIR# This needs changing
 	# scan package list
 	grep -v '^#' packages > packlist
 	while read pkg_name 
