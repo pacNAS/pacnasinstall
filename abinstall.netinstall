@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="0.02 | 15-09-2012 | aur pkg install "
+VER="0.03 | 15-09-2012 | aur pkg install base "
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -739,12 +739,13 @@ net_install()
 	# Might have to add edit grab and edit mirrorlist
 	# possibly add live user
 	
-	# bring pacman up to date
-	pacman -Syy
 	# Variables & setup
-	tmppackerdir="/tmp/packerbuild-*"
+	tmppackerdir="/tmp/packerbuild-0"
 	bind_mount
 	mkdir -p $DESTDIR/var/lib/pacman $DESTDIR/var/cache/pacman/pkg
+	# bring pacman up to date
+	# and grab base packages
+	pacman -Syy base -r $DESTDIR --noconfirm # This needs changing
 	# scan package list
 	grep -v '^#' packages > packlist
 	while read pkg_name 
