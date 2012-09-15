@@ -6,6 +6,8 @@ If using with Virtualbox please partition drive manually, make sure NC is not se
 
 Open a terminal then:
 
+*for best results edit your /etc/pacman.d/mirrorlist before running following command*
+
 `sudo pacman -Syy git`
 
 `git clone git://github.com/mrgreen3/abinstall.git`
@@ -14,12 +16,9 @@ Open a terminal then:
 
 `sudo ./abinstall`
 
-Currently working on grub-bios install, check /tmp/grub.log prior to 
-rebooting to make sure grub installed correctly.
+On latest testing isos you know have a script that will pull in latest abinstall
 
-Added an syslinux option to installer, very much work in progress.
-
-**Warning syslinux currently asks 'Enter options' this is purely optional and will need improving!**
+`git-abinstall`
 
 Removed menu variables to a lib file to allow for additional language versions.
 
