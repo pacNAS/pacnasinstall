@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.53 | 19-09-2012 | robust syslinux patch added "
+VER="1.54 | 19-09-2012 | robust syslinux patch added "
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
