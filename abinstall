@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.51 | 12-09-2012 | replaced chroot_ with bind_ "
+VER="1.52 | 19-09-2012 | add in netinstall "
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -685,7 +685,34 @@ mountpoints() {
 
 # installsystem()
 # installs to the target folder
-installsystem() {
+installsystem()
+{	
+	dialog --backtitle "archbang.org" --radiolist "Select install option:" 15 40 5 \ # create locale string
+    1 Local on \
+    2 Netinstall off \
+    2>$ANSWER 
+    
+   case $(cat $ANSWER) in
+      "1") local_install;;
+      "2") net_install;;
+      *) DONE=1;;
+    esac
+  [[ ! -s $ANSWER ]] && exit 1
+  
+   sync
+
+   S_INSTALL=1
+
+   # automagic time!
+   # any automatic configuration should go here
+   DIALOG --infobox "${_configuringsystem}" 6 40
+
+    hd_config
+    auto_fstab
+}
+    
+local_install()
+{
     DIALOG --msgbox "${_installationwillstart}" 0 0
 	mkdir -p $DESTDIR/bypass
 	(cd $DESTDIR && unsquashfs -da 32 -fr 32 -d ./vomi /run/archiso/bootmnt/arch/${arch}/root-image.fs.sfs && mount vomi/root-image.fs $DESTDIR/bypass && cp_install)
@@ -707,17 +734,14 @@ installsystem() {
     DIALOG --title "$_result" --exit-label "${_continue_label}" \
         --textbox "/tmp/unsquasherror.log" 18 83 || return 1
 
-    # ensure the disk is synced
-    sync
+}
 
-    S_INSTALL=1
-
-    # automagic time!
-    # any automatic configuration should go here
-    DIALOG --infobox "${_configuringsystem}" 6 40
-
-    hd_config
-    auto_fstab
+net_install()
+{
+	#network install here
+	# Might have to add edit grab and edit mirrorlist
+	# possibly add live user
+	
 }
 
 # Set up new install copy over files from /src
