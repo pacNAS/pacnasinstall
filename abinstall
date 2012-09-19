@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.52 | 19-09-2012 | add in netinstall "
+VER="1.53 | 19-09-2012 | robust syslinux patch added "
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -857,18 +857,22 @@ cat $DESTDIR/tmp/grub.log >$LOG
 syslinux_install()
 {
 sl_bootdir_fs=$(df -kT $DESTDIR/boot | grep $DESTDIR | awk '{print $2}')
+local LOG=/tmp/syslinux.log
 
 case "$sl_bootdir_fs" in
   ext[2-4]) 
     sl_rootdir_dev=$(df -kT $DESTDIR | grep $DESTDIR | awk '{print $1}')
     sl_rootdir_uuid=$(lsblk -fn $sl_rootdir_dev | awk '{print $3}')
     get_bl_options
-    syslinux-install_update -iam -c $DESTDIR && \
-      sed -i "s|/dev/sda3|UUID=$sl_rootdir_uuid|g" ${DESTDIR}/boot/syslinux/syslinux.cfg
-    [ ! -z "$bootloader_options" ] && sed -i "/\t.*APPEND.*/s|$| $bootloader_options|" ${DESTDIR}/boot/syslinux/syslinux.cfg 
-    sleep 2
-    $EDITOR $DESTDIR/boot/syslinux/syslinux.cfg
-    DIALOG --msgbox "${_instsyslinuxsuccess}" 0 0
+    syslinux-install_update -iam -c $DESTDIR > $LOG 2>&1
+    if [ "$?" -eq "0" ]; then
+      sed -i "s|/dev/sda3|UUID=$sl_rootdir_uuid|g" ${DESTDIR}/boot/syslinux/syslinux.cfg >> $LOG 2>&1
+      [ ! -z "$bootloader_options" ] && sed -i "/\t.*APPEND.*/s|$| $bootloader_options|" ${DESTDIR}/boot/syslinux/syslinux.cfg >> $LOG 2>&1
+      DIALOG --yesno "${_syslinuxcheckcfg}" 8 50 && $EDITOR $DESTDIR/boot/syslinux/syslinux.cfg 
+      DIALOG --msgbox "${_instsyslinuxsuccess}" 0 0
+    else
+      DIALOG --yesno "${_instsyslinuxfailure}" 8 50 && DIALOG --textbox $LOG 22 70 
+    fi
     ;;
   *) 
     echo ${_syslinuxwrongfs}
@@ -1144,7 +1148,7 @@ configure_system()
 install_bootloader()
 {
     DIALOG --colors --menu "${_installabootloader}\n\n" \
-        10 65 2 \
+        10 65 3 \
         "GRUB" "${_installgrubbl}" \
         "Syslinux" "${_installsyslinux}" \
         "${_none_label}" "${_installnobl}" 2>$ANSWER
