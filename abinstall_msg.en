@@ -89,6 +89,7 @@ installation."
   _errorinstgrub="Error installing GRUB."
   _instgrubsuccess="GRUB successfully installed."
   _instsyslinuxsuccess="Syslinux sucessfully installed"
+  _instsyslinuxfailure="Syslinux did not install successfully.  See /tmp/syslinux.log for more info"
   _syslinuxwrongfs="Syslinux needs to be installed on ext2, ext3 or ex4... Press any key to continue"
   
   _machinetimezone="Set the machine time to UTC universal time (recommended) or local time (if you have a dual-boot with a system requiring it)?"
