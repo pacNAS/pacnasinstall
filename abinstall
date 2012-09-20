@@ -94,6 +94,7 @@ S_MKFSAUTO=0    # auto fs part/formatting TODO: kill this
 S_SELECT=0      # package selection
 S_INSTALL=0     # package installation
 S_CONFIG=0      # configuration editing
+S_BOOTLOADER=0	# bootloader
 
 # main menu selection tracker
 CURRENT_SELECTION=""
@@ -741,7 +742,7 @@ net_install()
 	#network install here
 	# Might have to add edit grab and edit mirrorlist
 	# possibly add live user
-	
+	true	
 }
 
 # Set up new install copy over files from /src
@@ -846,32 +847,36 @@ bind_umount
 
 cat $DESTDIR/tmp/grub.log >$LOG
 # Check to see if grub installed correctly ! not there then exit
-	 if [[ $grub_success != 0 ]]; then
-        DIALOG --msgbox "${_errorinstgrub} (${_errordetails} $LOG)" 0 0
-        return 1
+    if [[ $grub_success != 0 ]]; then
+      DIALOG --msgbox "${_errorinstgrub} (${_errordetails} $LOG)" 0 0
+      return 1
+      S_BOOTLOADER=99
+    else
+      DIALOG --msgbox "${_instgrubsuccess}" 0 0
+      S_BOOTLOADER=1
     fi
-
-    DIALOG --msgbox "${_instgrubsuccess}" 0 0
 }
 
 syslinux_install()
 {
 sl_bootdir_fs=$(df -kT $DESTDIR/boot | grep $DESTDIR | awk '{print $2}')
-local LOG=/tmp/syslinux.log
+local SYSLINUXLOG=/tmp/syslinux.log
 
 case "$sl_bootdir_fs" in
   ext[2-4]) 
     sl_rootdir_dev=$(df -kT $DESTDIR | grep $DESTDIR | awk '{print $1}')
     sl_rootdir_uuid=$(lsblk -fn $sl_rootdir_dev | awk '{print $3}')
     get_bl_options
-    syslinux-install_update -iam -c $DESTDIR > $LOG 2>&1
+    syslinux-install_update -iam -c $DESTDIR > $SYSLINUXLOG 2>&1
     if [ "$?" -eq "0" ]; then
-      sed -i "s|/dev/sda3|UUID=$sl_rootdir_uuid|g" ${DESTDIR}/boot/syslinux/syslinux.cfg >> $LOG 2>&1
-      [ ! -z "$bootloader_options" ] && sed -i "/\t.*APPEND.*/s|$| $bootloader_options|" ${DESTDIR}/boot/syslinux/syslinux.cfg >> $LOG 2>&1
+      sed -i "s|/dev/sda3|UUID=$sl_rootdir_uuid|g" ${DESTDIR}/boot/syslinux/syslinux.cfg >> $SYSLINUXLOG 2>&1
+      [ ! -z "$bootloader_options" ] && sed -i "/\t.*APPEND.*/s|$| $bootloader_options|" ${DESTDIR}/boot/syslinux/syslinux.cfg >> $SYSLINUXLOG 2>&1
       DIALOG --yesno "${_syslinuxcheckcfg}" 8 50 && $EDITOR $DESTDIR/boot/syslinux/syslinux.cfg 
       DIALOG --msgbox "${_instsyslinuxsuccess}" 0 0
+      S_BOOTLOADER=1
     else
-      DIALOG --yesno "${_instsyslinuxfailure}" 8 50 && DIALOG --textbox $LOG 22 70 
+      DIALOG --yesno "${_instsyslinuxfailure}" 8 50 && DIALOG --textbox $SYSLINUXLOG 22 70 
+      S_BOOTLOADER=99
     fi
     ;;
   *) 
@@ -880,6 +885,17 @@ case "$sl_bootdir_fs" in
     ;;
 esac
 }
+
+bootloader_checker() {
+# no need to inform the user on a good bootloader installation but it's the only one that should umount
+case "$S_BOOTLOADER" in
+  0)	DIALOG --msgbox "${_bootloader_not_installed}" 22 70 ;;
+  1) 	_umountall &>/dev/null ; sleep 1 ; exit 0 ;;
+  99)	DIALOG --msgbox "${_bootloader_failed}" 22 70 ;;
+  *)	DIALOG --msgbox "${_bootloader_unknown}" 22 70 ;;
+esac
+}
+
 
 # set_clock()
 # prompts user to set hardware clock and timezone
@@ -1211,7 +1227,7 @@ mainmenu()
             echo ""
             echo "${_installationfinished}"
             echo ""
-            _umountall &>/dev/null ; sleep 1 ; exit 0
+	    break
         ;;
         *)
             if DIALOG --yesno "${_cancelinstall}" 6 40;then
@@ -1226,5 +1242,6 @@ DIALOG --msgbox "${_instwelcomemessage}" 12 65
 while true; do
     mainmenu
 done
+bootloader_checker
 
 exit 0
