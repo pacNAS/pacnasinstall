@@ -8,12 +8,13 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.54 | 19-09-2012 | robust syslinux patch added "
+VER="1.55 | 26-09-2012 | test for lang files "
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
 DESTDIR=/mnt/install
-
+SRC_LANG="/src/lang"
+[[ -f ${SRC_LANG}/abinstall_msg.en ]] || SRC_LANG="./src/lang"
 
 # help for options
 options_usage() {
@@ -973,8 +974,8 @@ installer_locale()
     2>$ANSWER 
 
     case $(cat $ANSWER) in
-      "1") . ./abinstall_msg.en;;
-      "2") . ./abinstall_msg.en;;
+      "1") . ${SRC_LANG}/abinstall_msg.en;;
+      "2") . ${SRC_LANG}/abinstall_msg.en;;
       *) DONE=1;;
     esac
   [[ ! -s $ANSWER ]] && exit 1
