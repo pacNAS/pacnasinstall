@@ -1136,7 +1136,7 @@ configure_system()
     #
     chroot ${DESTDIR} locale-gen
 	# /etc/localtime
-    cp /etc/localtime ${DESDIR}/etc/localtime &> /dev/null
+    cp /etc/localtime ${DESTDIR}/etc/localtime &> /dev/null
 
     ## END POSTPROCESSING ##
 	rm -f ${DESTDIR}/usr/bin/abinstall &> /dev/null
