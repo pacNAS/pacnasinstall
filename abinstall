@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.56 | 26-09-2012 | added new configs "
+VER="1.57 | 27-09-2012 | link for time zone "
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -943,10 +943,10 @@ set_clock()
     else
         HWCLOCK_PARAMS="$HWCLOCK_PARAMS --localtime"
     fi
-    # localtime needs linking? ln -sf /usr/share/zoneinfo/$TIMEZOME /etc/localtime
     if [ "$TIMEZONE" != "" -a -e "/usr/share/zoneinfo/$TIMEZONE" ]; then
-        /bin/rm -f /etc/localtime
-        /bin/cp "/usr/share/zoneinfo/$TIMEZONE" /etc/localtime
+		  cd $DESTDIR/etc;  ln -sf /usr/share/zoneinfo/$TIMEZONE localtime
+        #/bin/rm -f /etc/localtime
+        #/bin/cp "/usr/share/zoneinfo/$TIMEZONE" /etc/localtime
     fi
     /sbin/hwclock --hctosys $HWCLOCK_PARAMS --noadjfile
 
