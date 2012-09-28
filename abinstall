@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.57 | 27-09-2012 | link for time zone "
+VER="1.58 | 28-09-2012 | vboxvideo patch for autoprepare "
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -380,6 +380,11 @@ _getavaildisks()
 
 autoprepare()
 {
+    grep "^vboxvideo " /proc/modules
+    if [[ "$?" -eq "0" ]]; then
+      DIALOG --msgbox "${_assistedprepvbox}" 0 0
+      break
+    fi 
     DISCS=$(finddisks)
     if [ $(echo $DISCS | wc -w) -gt 1 ]; then
         DIALOG --msgbox "${_presentlyavaildisks}\n\n$(_getavaildisks)\n" 0 0
