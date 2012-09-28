@@ -150,4 +150,4 @@ installation."
   _modulesloadconftext="Kernel modules autoloaded at boot"
   _vconsoletext="Keymap Consolefont Consolemap"
   _localeconftext="System wide locale configuration"
-  
+  _assistedprepvbox="Assisted preparation is not supported with Virtualbox, you will have to manually partition the disk.  If you're not using Virtualbox, unload the vboxvideo module and try again (i.e. # rmmod vboxvideo)"
