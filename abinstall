@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.59 | 02-10-2012 | removed sed for rc.conf "
+VER="1.59 | 02-10-2012 | removed sed for rc.conf, minor bug in radiolist"
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -694,9 +694,9 @@ mountpoints() {
 # installs to the target folder
 installsystem()
 {	
-	dialog --backtitle "archbang.org" --radiolist "Select install option:" 15 40 5 \ # create locale string
-    1 Local on \
-    2 Netinstall off \
+	dialog --backtitle "archbang.org" --radiolist "Select install option:" 15 40 5 \
+    1 "Local" on \
+    2 "Netinstall" off \
     2>$ANSWER 
     
    case $(cat $ANSWER) in
