@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.58 | 28-09-2012 | vboxvideo patch for autoprepare "
+VER="1.59 | 02-10-2012 | removed sed for rc.conf "
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -773,9 +773,7 @@ cp -a /src/rc.local ${DESTDIR}/etc/rc.local &>/dev/null
 cp -a /src/rc.shutdown ${DESTDIR}/etc/rc.shutdown &>/dev/null
 cp /src/inittab ${DESTDIR}/etc/inittab &>/dev/null
 cp /etc/X11/xorg.conf.d/20-gpudriver.conf ${DESTDIR}/etc/X11/xorg.conf.d/20-gpudriver.conf &>/dev/null
-# removed from /src/rc.conf 
-#cp -a /src/rc.conf ${DESTDIR}/etc/rc.conf &>/dev/null
-sed -i '/. \/etc\/lastmin/d' $DESTDIR/etc/rc.conf
+cp -a /src/rc.conf ${DESTDIR}/etc/rc.conf &>/dev/null
 }
 
 # auto_fstab()
