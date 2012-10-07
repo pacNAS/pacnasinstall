@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.60 | 04-10-2012 | removed sed for rc.conf, minor bug in radiolist"
+VER="1.62 | 07-10-2012 | cp_install2 dialog copy, removed netinstall, code clean"
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -25,7 +25,7 @@ echo "  -h | --help 			What options are available in this script"
 echo "  -d | --destdir 		Installation directory (defaults to /mnt/install)"	
 echo "  -e | --editor 		Which editor to use - must be preinstalled (defaults to nano)"
 echo "  -i | --system_installed	Bypass the 'installation' section of the installer"
-echo "  -c | --system_configured	Bypass the 'configuration' section of the installer"
+echo "  -c | --system_configured Bypass the 'configuration' section of the installer"
 echo "  -v | --version     Display current abinstall version"
 echo 
 echo "Options -i and -c are useful if you've already installed and want to test a change to the installer"
@@ -61,7 +61,7 @@ done
 #  Done with options
 
  
-ANSWER="/tmp/.setup"		# dialog answer
+ANSWER="/tmp/.setup"	# dialog answer
 LOG="/dev/tty6"			# use the first VT not dedicated to a running console
 mkdir -p $DESTDIR		# install directory		
 arch=$(uname -m)		# archicture
@@ -108,27 +108,23 @@ DIALOG() {
    return $?
 }
 
-# bind_mount()
 # prepares target system as a chroot
-#
 bind_mount()
 {
-    [ -e "${DESTDIR}/sys" ] || mkdir "${DESTDIR}/sys"
-    [ -e "${DESTDIR}/proc" ] || mkdir "${DESTDIR}/proc"
-    [ -e "${DESTDIR}/dev" ] || mkdir "${DESTDIR}/dev"
-    mount -t sysfs sysfs "${DESTDIR}/sys"
-    mount -t proc proc "${DESTDIR}/proc"
-    mount -o bind /dev "${DESTDIR}/dev"
+[ -e "${DESTDIR}/sys" ] || mkdir "${DESTDIR}/sys"
+[ -e "${DESTDIR}/proc" ] || mkdir "${DESTDIR}/proc"
+[ -e "${DESTDIR}/dev" ] || mkdir "${DESTDIR}/dev"
+mount -t sysfs sysfs "${DESTDIR}/sys"
+mount -t proc proc "${DESTDIR}/proc"
+mount -o bind /dev "${DESTDIR}/dev"
 }
 
-# bind_umount()
 # tears down chroot in target system
-#
 bind_umount()
 {
-    umount $DESTDIR/proc
-    umount $DESTDIR/sys
-    umount $DESTDIR/dev
+umount $DESTDIR/proc
+umount $DESTDIR/sys
+umount $DESTDIR/dev
 }
 
 # Copy archbang to new install
@@ -143,6 +139,26 @@ do
   sleep 1
 done
 wait $cpPID
+}
+
+cp_install2() {
+# Array of files
+DIRS=($DESTDIR/bypass/*)
+# Show a progress bar
+( \
+   n=${#DIRS[*]};
+   i=0
+   for f in "${DIRS[@]}"
+   do
+      PCT=$(( 100*(++i)/n ))
+        echo "XXX"
+        echo $PCT
+        echo "${f}"
+        echo "XXX"
+        cp -pR $f $DESTDIR &>/dev/null
+   done
+   # Will need to set up msg strings in dialog
+) | dialog --title "Installing ArchBang..." --gauge "Copying file..." 7 75
 }
 
 # find devices/disks
@@ -690,43 +706,17 @@ mountpoints() {
     S_MKFS=1
 }
 
-# installsystem()
 # installs to the target folder
+# log files need to be changed as we are not unsquashing
 installsystem()
 {	
-	dialog --backtitle "archbang.org" --radiolist "Select install option:" 15 40 5 \
-    1 "Local" on \
-    2 "Netinstall" off \
-    2>$ANSWER 
-    
-   case $(cat $ANSWER) in
-      "1") local_install;;
-      "2") net_install;;
-      *) DONE=1;;
-    esac
-  [[ ! -s $ANSWER ]] && exit 1
-  
-   sync
-
-   S_INSTALL=1
-
-   # automagic time!
-   # any automatic configuration should go here
-   DIALOG --infobox "${_configuringsystem}" 6 40
-
-    hd_config
-    auto_fstab
-}
-    
-local_install()
-{
-    DIALOG --msgbox "${_installationwillstart}" 0 0
-	mkdir -p $DESTDIR/bypass
-	(cd $DESTDIR && mount /run/archiso/sfs/root-image/root-image.fs $DESTDIR/bypass && cp_install)
-	echo $? > /tmp/.install-retcode
-	if [ $(cat /tmp/.install-retcode) -ne 0 ]; then echo -e "\n${_installationfail}" >>/tmp/unsquasherror.log
-	else echo -e "\n${_installationsuccess}" >>/tmp/unsquasherror.log
-	fi
+	DIALOG --msgbox "${_installationwillstart}" 0 0
+    mkdir -p $DESTDIR/bypass
+    (cd $DESTDIR && mount /run/archiso/sfs/root-image/root-image.fs $DESTDIR/bypass && cp_install)
+    echo $? > /tmp/.install-retcode
+    if [ $(cat /tmp/.install-retcode) -ne 0 ]; then echo -e "\n${_installationfail}" >>/tmp/unsquasherror.log
+    else echo -e "\n${_installationsuccess}" >>/tmp/unsquasherror.log
+    fi
     sed -i '/dir_scan: failed to open directory [^ ]*, because File exists/d' /tmp/unsquasherror.log
 
     # finished, display scrollable output
@@ -740,17 +730,19 @@ local_install()
 
     DIALOG --title "$_result" --exit-label "${_continue_label}" \
         --textbox "/tmp/unsquasherror.log" 18 83 || return 1
+  
+   sync
 
+   S_INSTALL=1
+
+   # automagic time!
+   # any automatic configuration should go here
+   DIALOG --infobox "${_configuringsystem}" 6 40
+
+    hd_config
+    auto_fstab
 }
-
-net_install()
-{
-	#network install here
-	# Might have to add edit grab and edit mirrorlist
-	# possibly add live user
-	true	
-}
-
+    
 # Set up new install copy over files from /src
 hd_config()
 {
@@ -776,7 +768,6 @@ cp /etc/X11/xorg.conf.d/20-gpudriver.conf ${DESTDIR}/etc/X11/xorg.conf.d/20-gpud
 cp -a /src/rc.conf ${DESTDIR}/etc/rc.conf &>/dev/null
 }
 
-# auto_fstab()
 # preprocess fstab file
 # comments out old fields and inserts new ones
 # according to partitioning/formatting stage
@@ -900,12 +891,6 @@ case "$S_BOOTLOADER" in
 esac
 }
 
-
-# set_clock()
-# prompts user to set hardware clock and timezone
-#
-# params: none
-# returns: 1 on failure
 set_clock()
 {
     # utc or local?
