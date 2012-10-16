@@ -6,15 +6,12 @@ If using with Virtualbox please partition drive manually, make sure NC is not se
 
 Open a terminal then:
 
-*for best results edit your /etc/pacman.d/mirrorlist before running following command*
+*for best results edit your /etc/pacman.d/mirrorlist before running following commands*
 
-`sudo pacman -Syy git`
-
-`git clone git://github.com/mrgreen3/abinstall.git`
-
-`cd abinstall`
-
-`sudo ./abinstall`
+    sudo pacman -Syy git
+    git clone git://github.com/mrgreen3/abinstall.git
+    cd abinstall
+    sudo ./abinstall
 
 On latest testing isos you know have a script that will pull in latest abinstall
 
