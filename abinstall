@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.63 | 16-10-2012 | dialog progress to install function"
+VER="1.63 | 16-10-2012 | dialog progress to install function plus error checking"
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -673,9 +673,12 @@ mountpoints() {
 }
 
 # installs to the target folder
-# log files need to be changed as we are not unsquashing
 installsystem()
 {
+# create log file / remove if it exists
+inst_log="/tmp/installer.log"
+[[ -f ${inst_log} ]] && rm ${inst_log}
+
 _result="${_installationsuccess}"
 mkdir -p $DESTDIR/bypass
 cd $DESTDIR
@@ -693,13 +696,17 @@ PCT=$(( 100*(++i)/n ))
     echo $PCT
     echo "${f}" # Do we need to display filename?
     echo "XXX"
-    cp -pR $f $DESTDIR &>/dev/null # possibly log it here?
+    cp -pR $f $DESTDIR 2>> ${inst_log}
 done
 ) | dialog --title "Installing ArchBang..." --gauge "Copying file..." 7 75
-# At the moment we are only testing to see if dialog worked?
-[ $? -ne 0 ] && _result="${_installationfail}"
+
+# test for errors in file
+[[ -s ${inst_log} ]] && _result="${_installationfail}"
+
+# display results
 DIALOG --title "$_result" --exit-label "${_continue_label}" \
-        --textbox "/tmp/installerror.log" 18 83 || return 1
+      --textbox "${inst_log}" 18 83
+
 sync
 S_INSTALL=1
 # System configuration
