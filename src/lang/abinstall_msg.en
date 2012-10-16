@@ -74,6 +74,7 @@ installation."
   _wantcplivechg="Do you want to copy into the installation the changes done in live? [y/n]"
   _livechg_rwroot="This means the contents of your rwroot folder."
   _pressentercont="Press enter to continue..."
+  _copyingfile="Copying file..."
 
   _isgrubinst="Is GRUB installed? Cannot find"
   _autodetectrootfail="Root partition autodetection failed.  Modify manually"
