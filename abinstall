@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.63 | 16-10-2012 | dialog progress to install function plus error checking"
+VER="1.64 | 16-10-2012 | fix clock bug plus error checking"
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -903,11 +903,6 @@ set_clock()
     else
         HWCLOCK_PARAMS="$HWCLOCK_PARAMS --localtime"
     fi
-    if [ "$TIMEZONE" != "" -a -e "/usr/share/zoneinfo/$TIMEZONE" ]; then
-		  cd $DESTDIR/etc;  ln -sf /usr/share/zoneinfo/$TIMEZONE localtime
-        #/bin/rm -f /etc/localtime
-        #/bin/cp "/usr/share/zoneinfo/$TIMEZONE" /etc/localtime
-    fi
     /sbin/hwclock --hctosys $HWCLOCK_PARAMS --noadjfile
 
     # display and ask to set date/time
@@ -1015,14 +1010,10 @@ configure_system()
     ## PREPROCESSING ##
     # only done on first invocation of configure_system
     if [ $S_CONFIG -eq 0 ]; then
-
-        # /etc/rc.conf
-        # insert timezone and utc info
-        sed -i -e "s/^TIMEZONE=.*/TIMEZONE=\"$(echo $TIMEZONE | sed "s/\//\\\\\//g")\"/g" \
-               -e "s/^HARDWARECLOCK=.*/HARDWARECLOCK=\"$HARDWARECLOCK\"/g" \
-               ${DESTDIR}/etc/rc.conf
+		if [ "$TIMEZONE" != "" -a -e "/usr/share/zoneinfo/$TIMEZONE" ]; then
+		  cd $DESTDIR/etc;  ln -sf /usr/share/zoneinfo/$TIMEZONE localtime
+		fi
     fi
-
     ## END PREPROCESS ##
 
     local CURRENT_SELECTION=""
