@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.62 | 07-10-2012 | cp_install2 dialog copy, removed netinstall, code clean"
+VER="1.63 | 16-10-2012 | dialog progress to install function"
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -125,40 +125,6 @@ bind_umount()
 umount $DESTDIR/proc
 umount $DESTDIR/sys
 umount $DESTDIR/dev
-}
-
-# Copy archbang to new install
-cp_install() {
-echo -n "copying files..."
-cp -pR $DESTDIR/bypass/* $DESTDIR/ &
-cpPID=$!
-
-while ps | grep $cpPID &>/dev/null
-do
-  echo -n "."
-  sleep 1
-done
-wait $cpPID
-}
-
-cp_install2() {
-# Array of files
-DIRS=($DESTDIR/bypass/*)
-# Show a progress bar
-( \
-   n=${#DIRS[*]};
-   i=0
-   for f in "${DIRS[@]}"
-   do
-      PCT=$(( 100*(++i)/n ))
-        echo "XXX"
-        echo $PCT
-        echo "${f}"
-        echo "XXX"
-        cp -pR $f $DESTDIR &>/dev/null
-   done
-   # Will need to set up msg strings in dialog
-) | dialog --title "Installing ArchBang..." --gauge "Copying file..." 7 75
 }
 
 # find devices/disks
@@ -709,38 +675,37 @@ mountpoints() {
 # installs to the target folder
 # log files need to be changed as we are not unsquashing
 installsystem()
-{	
-	DIALOG --msgbox "${_installationwillstart}" 0 0
-    mkdir -p $DESTDIR/bypass
-    (cd $DESTDIR && mount /run/archiso/sfs/root-image/root-image.fs $DESTDIR/bypass && cp_install)
-    echo $? > /tmp/.install-retcode
-    if [ $(cat /tmp/.install-retcode) -ne 0 ]; then echo -e "\n${_installationfail}" >>/tmp/unsquasherror.log
-    else echo -e "\n${_installationsuccess}" >>/tmp/unsquasherror.log
-    fi
-    sed -i '/dir_scan: failed to open directory [^ ]*, because File exists/d' /tmp/unsquasherror.log
-
-    # finished, display scrollable output
-    local _result=''
-    if [ $(cat /tmp/.install-retcode) -ne 0 ]; then
-        _result="${_installationfail}"
-    else
-        _result="${_installationsuccess}"
-    fi
-    rm /tmp/.install-retcode
-
-    DIALOG --title "$_result" --exit-label "${_continue_label}" \
-        --textbox "/tmp/unsquasherror.log" 18 83 || return 1
-  
-   sync
-
-   S_INSTALL=1
-
-   # automagic time!
-   # any automatic configuration should go here
-   DIALOG --infobox "${_configuringsystem}" 6 40
-
-    hd_config
-    auto_fstab
+{
+_result="${_installationsuccess}"
+mkdir -p $DESTDIR/bypass
+cd $DESTDIR
+mount /run/archiso/sfs/root-image/root-image.fs $DESTDIR/bypass
+# Array of files
+DIRS=($DESTDIR/bypass/*)
+# Show a progress bar
+( \
+n=${#DIRS[*]};
+i=0
+for f in "${DIRS[@]}"
+do
+PCT=$(( 100*(++i)/n ))
+    echo "XXX"
+    echo $PCT
+    echo "${f}" # Do we need to display filename?
+    echo "XXX"
+    cp -pR $f $DESTDIR &>/dev/null # possibly log it here?
+done
+) | dialog --title "Installing ArchBang..." --gauge "Copying file..." 7 75
+# At the moment we are only testing to see if dialog worked?
+[ $? -ne 0 ] && _result="${_installationfail}"
+DIALOG --title "$_result" --exit-label "${_continue_label}" \
+        --textbox "/tmp/installerror.log" 18 83 || return 1
+sync
+S_INSTALL=1
+# System configuration
+DIALOG --infobox "${_configuringsystem}" 6 40
+hd_config
+auto_fstab
 }
     
 # Set up new install copy over files from /src
