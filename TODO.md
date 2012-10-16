@@ -1,7 +1,9 @@
+
 Clean up code
-Autoprepare removed
-dialog for progress, change to DIALOG format
-[add in msg strings]
+Test 
+
 copy live install? function
+
+Rewrite abinstall 
 
 Buy more Beer
