@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.64 | 16-10-2012 | fix clock bug plus error checking"
+VER="1.65 | 18-10-2012 | fix clock bug plus error checking"
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -1094,8 +1094,6 @@ configure_system()
     # /etc/locale.gen
     #
     chroot ${DESTDIR} locale-gen
-	# /etc/localtime
-    cp /etc/localtime ${DESTDIR}/etc/localtime &> /dev/null
 
     ## END POSTPROCESSING ##
 	rm -f ${DESTDIR}/usr/bin/abinstall &> /dev/null
@@ -1113,6 +1111,10 @@ configure_system()
 	rm ${DESTDIR}/lib/initcpio/install/archiso &> /dev/null
 	rm ${DESTDIR}/lib/initcpio/install/archiso_loop_mnt &> /dev/null
 	rm ${DESTDIR}/lib/initcpio/install/archiso_pxe_nbd &> /dev/null
+
+	# place enable slim here and remove getty@.service
+	rm ${DESTDIR}/etc/systemd/system/getty@.service &> /dev/null
+	chroot ${DESTDIR} systemctl -f enable slim.service || true
 
     S_CONFIG=1
 }
