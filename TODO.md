@@ -1,9 +1,7 @@
 Clean up code
 
-Test 
+Test
 
-copy live install? function
-
-Rewrite abinstall 
+Remove autopreare 
 
 Buy more Beer

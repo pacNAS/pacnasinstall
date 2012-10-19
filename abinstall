@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.65 | 18-10-2012 | fix clock bug plus error checking"
+VER="1.66 | 19-10-2012 | remove old rc.* files and lastmin"
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -734,10 +734,10 @@ cp -a /src/.Xdefaults ${DESTDIR}/etc/skel/.Xdefaults &>/dev/null
 cp -a /src/.Xdefaults ${DESTDIR}/root/.Xdefaults &>/dev/null
 cp -a /src/oblogout.conf ${DESTDIR}/etc/oblogout.conf &>/dev/null
 cp -a /src/rc.local ${DESTDIR}/etc/rc.local &>/dev/null
-cp -a /src/rc.shutdown ${DESTDIR}/etc/rc.shutdown &>/dev/null
-cp /src/inittab ${DESTDIR}/etc/inittab &>/dev/null
+#cp -a /src/rc.shutdown ${DESTDIR}/etc/rc.shutdown &>/dev/null
+#cp /src/inittab ${DESTDIR}/etc/inittab &>/dev/null
 cp /etc/X11/xorg.conf.d/20-gpudriver.conf ${DESTDIR}/etc/X11/xorg.conf.d/20-gpudriver.conf &>/dev/null
-cp -a /src/rc.conf ${DESTDIR}/etc/rc.conf &>/dev/null
+#cp -a /src/rc.conf ${DESTDIR}/etc/rc.conf &>/dev/null
 }
 
 # preprocess fstab file
@@ -1061,7 +1061,6 @@ configure_system()
         # Create modules.conf as recent iso does not have it
         touch $DESTDIR/etc/modules-load.d/modules.conf
         DIALOG $DEFAULT --menu "Configuration" 17 80 10 \
-            "/etc/rc.conf"              "${_rcconftext}" \
             "/etc/fstab"                "${_fstabtext}" \
             "/etc/mkinitcpio.conf"      "${_mkinitcpioconftext}" \
             "/etc/modprobe.d/modprobe.conf" "${_modprobeconftext}" \
@@ -1103,7 +1102,7 @@ configure_system()
 	rm -rf ${DESTDIR}/src &> /dev/null
 	rmdir ${DESTDIR}/bypass &> /dev/null
 	rmdir ${DESTDIR}/src &> /dev/null
-	rm ${DESTDIR}/etc/lastmin &> /dev/null
+	#rm ${DESTDIR}/etc/lastmin &> /dev/null
 	rm ${DESTDIR}/lib/initcpio/archiso_pxe_nbd &> /dev/null
 	rm ${DESTDIR}/lib/initcpio/hooks/archiso &> /dev/null
 	rm ${DESTDIR}/lib/initcpio/hooks/archiso_loop_mnt &> /dev/null
