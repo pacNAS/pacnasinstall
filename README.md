@@ -13,11 +13,5 @@ Open a terminal then:
     cd abinstall
     sudo ./abinstall
 
-On latest testing isos you know have a script that will pull in latest abinstall
-
-`git-abinstall`
-
-Removed menu variables to a lib file to allow for additional language versions.
-
 For all options run 'sudo ./abinstall -h' 
 
