@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.66 | 19-10-2012 | remove old rc.* files and lastmin"
+VER="1.67 | 19-10-2012 | autoprepare removed.."
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -360,190 +360,6 @@ _getavaildisks()
     done
 }
 
-autoprepare()
-{
-    grep "^vboxvideo " /proc/modules
-    if [[ "$?" -eq "0" ]]; then
-      DIALOG --msgbox "${_assistedprepvbox}" 0 0
-      break
-    fi 
-    DISCS=$(finddisks)
-    if [ $(echo $DISCS | wc -w) -gt 1 ]; then
-        DIALOG --msgbox "${_presentlyavaildisks}\n\n$(_getavaildisks)\n" 0 0
-        DIALOG --menu "${_selectdisktouse}" 14 55 7 $(finddisks _) 2>$ANSWER || return 1
-        DISC=$(cat $ANSWER)
-    else
-        DISC=$DISCS
-    fi
-    SET_DEFAULTFS=""
-    BOOT_PART_SET=""
-    SWAP_PART_SET=""
-    ROOT_PART_SET=""
-    CHOSEN_FS=""
-    # disk size in MiB
-    DISC_SIZE=$(($(_getdisccapacity $DISC) / 2**20))
-    while [ "$SET_DEFAULTFS" = "" ]; do
-        [ "$(which mkreiserfs 2>/dev/null)" ] && FSOPTS="reiserfs Reiser3"
-        [ "$(which mkfs.xfs 2>/dev/null)" ]   && FSOPTS="$FSOPTS xfs XFS"
-        [ "$(which mkfs.jfs 2>/dev/null)" ]   && FSOPTS="$FSOPTS jfs JFS"
-        [ "$(which mkfs.ext2 2>/dev/null)" ]  && FSOPTS="$FSOPTS ext2 ext2 ext3 ext3 ext4 ext4"
-        while [ "$BOOT_PART_SET" = "" ]; do
-            DIALOG --inputbox "${_enterbootpartsize}\n\n${_diskspaceleft} $DISC_SIZE MiB" 10 65 "32" 2>$ANSWER || return 1
-            BOOT_PART_SIZE="$(cat $ANSWER)"
-            if [ "$BOOT_PART_SIZE" = "" ]; then
-                DIALOG --msgbox "${_errorincorrectsize}" 0 0
-            else
-                if [ "$BOOT_PART_SIZE" -ge "$DISC_SIZE" -o "$BOOT_PART_SIZE" -lt "16" -o "$SBOOT_PART_SIZE" = "$DISC_SIZE" ]; then
-                    DIALOG --msgbox "${_errorsizetoobig}" 0 0
-                else
-                    BOOT_PART_SET=1
-                fi
-            fi
-        done
-        DISC_SIZE=$(($DISC_SIZE-$BOOT_PART_SIZE))
-        while [ "$SWAP_PART_SET" = "" ]; do
-            DIALOG --inputbox "${_enterswappartsize}\n\n${_diskspaceleft} $DISC_SIZE MiB" 10 65 "256" 2>$ANSWER || return 1
-            SWAP_PART_SIZE=$(cat $ANSWER)
-            if [ "$SWAP_PART_SIZE" = "" -o  "$SWAP_PART_SIZE" -le "0" ]; then
-                DIALOG --msgbox "${_errorincorrectsize}" 0 0
-            else
-                if [ "$SWAP_PART_SIZE" -ge "$DISC_SIZE" ]; then
-                    DIALOG --msgbox "${_errorsizetoobig}" 0 0
-                else
-                    SWAP_PART_SET=1
-                fi
-            fi
-        done
-        DISC_SIZE=$(($DISC_SIZE-$SWAP_PART_SIZE))
-        while [ "$ROOT_PART_SET" = "" ]; do
-            DIALOG --inputbox "${_enterrootpartsize}\n\n${_diskspaceleft} $DISC_SIZE MiB" 10 65 "7500" 2>$ANSWER || return 1
-            ROOT_PART_SIZE=$(cat $ANSWER)
-            if [ "$ROOT_PART_SIZE" = "" -o "$ROOT_PART_SIZE" -le "0" ]; then
-                DIALOG --msgbox "${_errorincorrectsize}" 0 0
-            else
-                if [ "$ROOT_PART_SIZE" -ge "$DISC_SIZE" ]; then
-                    DIALOG --msgbox "${_errorsizetoobig}" 0 0
-                else
-                    DIALOG --yesno "${_homepartsize} $(($DISC_SIZE-$ROOT_PART_SIZE)) MiB. OK ?" 0 0 && ROOT_PART_SET=1
-                fi
-            fi
-        done
-        while [ "$CHOSEN_FS" = "" ]; do
-            DIALOG --menu "${_selecthomerootfs}" 13 45 6 $FSOPTS 2>$ANSWER || return 1
-            FSTYPE=$(cat $ANSWER)
-            DIALOG --yesno "$FSTYPE ${_fshomeroottobeused}" 0 0 && CHOSEN_FS=1
-        done
-        SET_DEFAULTFS=1
-    done
-
-    DIALOG --defaultno --yesno "$DISC ${_willbeerased}" 0 0 || return 1
-
-    DEVICE=$DISC
-    FSSPECS=$(echo $DEFAULTFS | sed -e "s|/:7000:reiserfs|/:$ROOT_PART_SIZE:$FSTYPE|g" -e "s|/home:\*:reiserfs|/home:\*:$FSTYPE|g" -e "s|swap:256|swap:$SWAP_PART_SIZE|g" -e "s|/boot:32|/boot:$BOOT_PART_SIZE|g")
-    sfdisk_input=""
-
-    case "${DEVICE}" in
-    *mmcblk*)
-     PART_ROOT="${DEVICE}p3"
-     swap_partition="${DEVICE}p2"
-    ;;
-    *)
-     # we assume a /dev/hdX format (or /dev/sdX)
-     PART_ROOT="${DEVICE}3"
-     swap_partition="${DEVICE}2"
-    ;;
-    esac
-
-    if [ "$S_MKFS" = "1" ]; then
-        DIALOG --msgbox "${_alreadyprepparts}" 0 0
-        return 0
-    fi
-
-    # validate DEVICE
-    if [ ! -b "$DEVICE" ]; then
-      DIALOG --msgbox "${_invaliddevice} '$DEVICE'" 0 0
-      return 1
-    fi
-
-    # validate DEST
-    if [ ! -d "$DESTDIR" ]; then
-        DIALOG --msgbox "${_invaliddestdir} '$DESTDIR'" 0 0
-        return 1
-    fi
-
-    # / required
-    if [ $(echo $FSSPECS | grep '/:' | wc -l) -ne 1 ]; then
-        DIALOG --msgbox "${_onlyonerootpart}" 0 0
-        return 1
-    fi
-
-    rm -f /tmp/.fstab
-
-    _umountall
-
-    # setup input var for sfdisk
-    for fsspec in $FSSPECS; do
-        fssize=$(echo $fsspec | tr -d ' ' | cut -f2 -d:)
-        if [ "$fssize" = "*" ]; then
-                fssize_spec=';'
-        else
-                fssize_spec=",$fssize"
-        fi
-        fstype=$(echo $fsspec | tr -d ' ' | cut -f3 -d:)
-        if [ "$fstype" = "swap" ]; then
-                fstype_spec=",S"
-        else
-                fstype_spec=","
-        fi
-        bootflag=$(echo $fsspec | tr -d ' ' | cut -f4 -d:)
-        if [ "$bootflag" = "+" ]; then
-            bootflag_spec=",*"
-        else
-            bootflag_spec=""
-        fi
-        sfdisk_input="${sfdisk_input}${fssize_spec}${fstype_spec}${bootflag_spec}\n"
-    done
-    sfdisk_input=$(printf "$sfdisk_input")
-
-    # invoke sfdisk
-    printk off
-    DIALOG --infobox "${_partitionningdev} $DEVICE" 0 0
-    sfdisk $DEVICE -uM >$LOG 2>&1 <<EOF
-$sfdisk_input
-EOF
-    if [ $? -gt 0 ]; then
-        DIALOG --msgbox "${_errorpartitionningdev} $DEVICE (${_errordetails} $LOG)" 0 0
-        printk on
-        return 1
-    fi
-    printk on
-
-    # need to mount root first, then do it again for the others
-    part=1
-    for fsspec in $FSSPECS; do
-        mountpoint=$(echo $fsspec | tr -d ' ' | cut -f1 -d:)
-        fstype=$(echo $fsspec | tr -d ' ' | cut -f3 -d:)
-        if echo $mountpoint | tr -d ' ' | grep '^/$' 2>&1 > /dev/null; then
-            _mkfs yes ${DEVICE}${part} "$fstype" "$DESTDIR" "$mountpoint" || return 1
-        fi
-        part=$(($part + 1))
-    done
-
-    # make other filesystems
-    part=1
-    for fsspec in $FSSPECS; do
-        mountpoint=$(echo $fsspec | tr -d ' ' | cut -f1 -d:)
-        fstype=$(echo $fsspec | tr -d ' ' | cut -f3 -d:)
-        if [ $(echo $mountpoint | tr -d ' ' | grep '^/$' | wc -l) -eq 0 ]; then
-            _mkfs yes ${DEVICE}${part} "$fstype" "$DESTDIR" "$mountpoint" || return 1
-        fi
-        part=$(($part + 1))
-    done
-
-    DIALOG --msgbox "${_preparationfinished}" 0 0
-    S_MKFSAUTO=1
-}
-
 partition() {
     if [ "$S_MKFSAUTO" = "1" ]; then
         DIALOG --msgbox "${_partsalreadyprepared}" 0 0
@@ -694,7 +510,6 @@ do
 PCT=$(( 100*(++i)/n ))
     echo "XXX"
     echo $PCT
-    echo "${f}" # Do we need to display filename?
     echo "XXX"
     cp -pR $f $DESTDIR 2>> ${inst_log}
 done
@@ -937,6 +752,7 @@ installer_locale()
   [[ ! -s $ANSWER ]] && exit 1
 }
 
+# could get rid of this function by going straight to prepare drive from main menu
 prepare_harddrive()
 {
     S_MKFSAUTO=0
@@ -950,14 +766,11 @@ prepare_harddrive()
             DEFAULT=""
         fi
         DIALOG $DEFAULT --menu "${_diskpreparation}" 12 60 5 \
-            "1" "${_assistprepa}" \
-            "2" "${_manualpartit}" \
-            "3" "${_mainmenulabel}" 2>$ANSWER
+            "1" "${_manualpartit}" \
+            "2" "${_mainmenulabel}" 2>$ANSWER
         CURRENT_SELECTION="$(cat $ANSWER)"
         case $(cat $ANSWER) in
             "1")
-                autoprepare ;;
-            "2")
                 partition
                 PARTFINISH=""
                 mountpoints ;;
