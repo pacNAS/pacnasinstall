@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.67 | 19-10-2012 | autoprepare removed.."
+VER="1.68 | 26-10-2012 | allow syslinux to use btrfs"
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -645,7 +645,7 @@ sl_bootdir_fs=$(df -kT $DESTDIR/boot | grep $DESTDIR | awk '{print $2}')
 local SYSLINUXLOG=/tmp/syslinux.log
 
 case "$sl_bootdir_fs" in
-  ext[2-4]) 
+  ext[2-4]|btrfs) 
     sl_rootdir_dev=$(df -kT $DESTDIR | grep $DESTDIR | awk '{print $1}')
     sl_rootdir_uuid=$(lsblk -fn $sl_rootdir_dev | awk '{print $3}')
     get_bl_options
