@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.68 | 26-10-2012 | allow syslinux to use btrfs"
+VER="1.69 | 14-11-2012 | echo files during install"
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -509,6 +509,7 @@ for f in "${DIRS[@]}"
 do
 PCT=$(( 100*(++i)/n ))
     echo "XXX"
+    echo ${f}
     echo $PCT
     echo "XXX"
     cp -pR $f $DESTDIR 2>> ${inst_log}
