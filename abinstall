@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.69 | 14-11-2012 | echo files during install"
+VER="1.70 | 21-11-2012 | fix user log in error"
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -926,7 +926,7 @@ configure_system()
 	rm ${DESTDIR}/lib/initcpio/install/archiso_pxe_nbd &> /dev/null
 
 	# place enable slim here and remove getty@.service
-	rm ${DESTDIR}/etc/systemd/system/getty@.service &> /dev/null
+	rm ${DESTDIR}/etc/systemd/system/autologin@.service &> /dev/null
 	chroot ${DESTDIR} systemctl -f enable slim.service || true
 
     S_CONFIG=1
