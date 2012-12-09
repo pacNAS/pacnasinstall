@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.70 | 21-11-2012 | fix user log in error"
+VER="1.69 | 09-12-2012 | match live abinstall"
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -509,7 +509,6 @@ for f in "${DIRS[@]}"
 do
 PCT=$(( 100*(++i)/n ))
     echo "XXX"
-    echo ${f}
     echo $PCT
     echo "XXX"
     cp -pR $f $DESTDIR 2>> ${inst_log}
@@ -925,8 +924,9 @@ configure_system()
 	rm ${DESTDIR}/lib/initcpio/install/archiso_loop_mnt &> /dev/null
 	rm ${DESTDIR}/lib/initcpio/install/archiso_pxe_nbd &> /dev/null
 
-	# place enable slim here and remove getty@.service
+	# place enable slim here and remove autologin@.service
 	rm ${DESTDIR}/etc/systemd/system/autologin@.service &> /dev/null
+	rm ${DESTDIR}/etc/systemd/system/default.target &> /dev/null
 	chroot ${DESTDIR} systemctl -f enable slim.service || true
 
     S_CONFIG=1
