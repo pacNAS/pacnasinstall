@@ -572,14 +572,15 @@ auto_fstab()
 }
 
 
-# Get any optional bootloader options
+# Get any additional bootloader options
 get_bl_options() {
+# remove quiet from /etc/default/grub
+sed -i 's|quiet||' ${DESTDIR}/etc/default/grub
 DIALOG --inputbox "${_get_bootloader_options}" 8 50 2>$ANSWER || return 1
 bootloader_options=$(cat $ANSWER)
 }
 
-# This is my new install for grub-bios [ will upload original function ]
-# Will need a way to check grub.cfg although you cannot edit it directly 
+# This is my new install for grub-bios
 grub-bios() {
 
 DEVS=$(finddisks _)
@@ -596,7 +597,7 @@ DEVS=$(finddisks _)
     DIALOG --menu "${_whereinststage1}" 14 55 7 $DEVS 2>$ANSWER || return 1
     ROOTDEV=$(cat $ANSWER)
     DIALOG --infobox "${_installinggrub}" 3 30
-    
+
     # freeze xfs filesystems if any, to enable grub installation on xfs filesystems
     if [ -x /usr/sbin/xfs_freeze ]; then
      if [ "$(blkid -o value -s TYPE -p $(findmnt -o source -n $DESTDIR/boot))" == "xfs" ];then
@@ -608,9 +609,9 @@ DEVS=$(finddisks _)
       unfreezeroot=y
      fi
     fi
-   
+
 bind_mount
-    
+
 modprobe dm-mod
 chroot $DESTDIR /usr/sbin/grub-install --target=i386-pc --recheck --debug "$(cat $ANSWER)" > /tmp/grub.log 2>&1
 grub_success=$?
@@ -860,10 +861,11 @@ configure_system()
                 rm $DESTDIR/home/live/.Xdefaults
                 cp -a /src/.Xdefaults $DESTDIR/home/live/.Xdefaults &>/dev/null
                 chroot ${DESTDIR} chown live:users /home/live -R &> /dev/null
-		chroot ${DESTDIR} sed -i 's/^exec.*openbox-session$/exec dbus-launch openbox-session/' /home/live/.xinitrc &>/dev/null
+								# check if this has worked?
+								chroot ${DESTDIR} sed -i 's/^exec.*openbox-session$/exec dbus-launch openbox-session/' /home/live/.xinitrc &>/dev/null
                 chroot ${DESTDIR} /root/mvuser.sh
                 rm $DESTDIR/root/mvuser.sh
-                
+
         elif [ "$CURRENT_SELECTION" = "Config-system" ]; then
     while true; do
         if [ -n "$CURRENT_SELECTION" ]; then
