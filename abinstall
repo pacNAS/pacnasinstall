@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.70 | 10-12-2012 | remove dbus-launch"
+VER="1.71 | 10-12-2012 | system_config"
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -902,12 +902,14 @@ configure_system()
             $EDITOR ${DESTDIR}${CURRENT_SELECTION}
         fi
   done
+
 	## Setting up new system
-   cp /run/archiso/bootmnt/arch/boot/${arch}/vmlinuz ${DESTDIR}/boot/vmlinuz-linux
-   run_mkinitcpio
-   # /etc/locale.gen
-   chroot ${DESTDIR} locale-gen
-   # Clean up new install 
+  cp /run/archiso/bootmnt/arch/boot/${arch}/vmlinuz ${DESTDIR}/boot/vmlinuz-linux
+  run_mkinitcpio
+  # /etc/locale.gen
+  chroot ${DESTDIR} locale-gen
+
+  # Clean up new install 
 	rm -f ${DESTDIR}/usr/bin/abinstall &> /dev/null
 	rm -f ${DESTDIR}/usr/bin/mvuser.sh &> /dev/null
 	rm -rf ${DESTDIR}/vomi &> /dev/null
@@ -922,14 +924,24 @@ configure_system()
 	rm ${DESTDIR}/lib/initcpio/install/archiso &> /dev/null
 	rm ${DESTDIR}/lib/initcpio/install/archiso_loop_mnt &> /dev/null
 	rm ${DESTDIR}/lib/initcpio/install/archiso_pxe_nbd &> /dev/null
+
 	# Enable slim here and remove unwanted services
 	rm ${DESTDIR}/etc/systemd/system/autologin@.service &> /dev/null
 	rm ${DESTDIR}/etc/systemd/system/rc-local.service &> /dev/null
 	rm ${DESTDIR}/etc/systemd/system/default.target &> /dev/null
 	chroot ${DESTDIR} systemctl -f enable slim.service || true
-	# move /src/rc.local to ${DESTDIR}/root then run under chroot? and remove it
-	# This way we can make subtle changes to boot process without rewriting
-	# absintall each time.
+
+  # Stop pacman complaining
+  chroot ${DESTDIR} mkdir -p /var/lib/pacman/sync
+  chroot ${DESTDIR} cd /var/lib/pacman/sync
+  chroot ${DESTDIR} touch core.db extra.db community.db
+
+  # Set alsa sound levels and store them
+  chroot ${DESTDIR} amixer sset 'Master Mono' 90% unmute &> /dev/null
+  chroot ${DESTDIR} amixer sset 'Master' 90% unmute &> /dev/null
+  chroot ${DESTDIR} amixer sset 'PCM' 90% unmute &> /dev/null
+  chroot ${DESTDIR} alsactl store
+
     S_CONFIG=1
 }
 
