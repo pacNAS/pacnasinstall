@@ -534,11 +534,11 @@ auto_fstab
 hd_config()
 {
 # grub-bios directory setup
-mkdir -p $DESTDIR/boot/grub
+#mkdir -p $DESTDIR/boot/grub
 #nm
 rm $DESTDIR/etc/xdg/autostart/nm-applet.desktop &>/dev/null
 #little bonus
-cp -ra /etc/skel/.[a-zA-Z0-9]* ${DESTDIR}/root/ &>/dev/null
+#cp -ra /etc/skel/.[a-zA-Z0-9]* ${DESTDIR}/root/ &>/dev/null
 #cp -a /src/menu.xml ${DESTDIR}/etc/skel/.config/openbox/menu.xml &>/dev/null
 cp -a /src/rc.xml ${DESTDIR}/etc/skel/.config/openbox/rc.xml &>/dev/null
 #cp -a /src/.conkyrc ${DESTDIR}/etc/skel/.conkyrc &>/dev/null
@@ -546,9 +546,9 @@ cp -a /src/.Xdefaults ${DESTDIR}/etc/skel/.Xdefaults &>/dev/null
 #cp -a /src/menu.xml ${DESTDIR}/root/.config/openbox/menu.xml &>/dev/null
 #cp -a /src/rc.xml ${DESTDIR}/root/.config/openbox/rc.xml &>/dev/null
 #cp -a /src/.conkyrc ${DESTDIR}/root/.conkyrc &>/dev/null
-cp -a /src/.Xdefaults ${DESTDIR}/root/.Xdefaults &>/dev/null
+#cp -a /src/.Xdefaults ${DESTDIR}/root/.Xdefaults &>/dev/null
 cp -a /src/oblogout.conf ${DESTDIR}/etc/oblogout.conf &>/dev/null
-cp -a /src/rc.local ${DESTDIR}/etc/rc.local &>/dev/null
+#cp -a /src/rc.local ${DESTDIR}/etc/rc.local &>/dev/null
 #cp -a /src/rc.shutdown ${DESTDIR}/etc/rc.shutdown &>/dev/null
 #cp /src/inittab ${DESTDIR}/etc/inittab &>/dev/null
 cp /etc/X11/xorg.conf.d/20-gpudriver.conf ${DESTDIR}/etc/X11/xorg.conf.d/20-gpudriver.conf &>/dev/null
@@ -582,7 +582,7 @@ bootloader_options=$(cat $ANSWER)
 
 # This is my new install for grub-bios
 grub-bios() {
-
+	mkdir -p $DESTDIR/boot/grub/locale
 DEVS=$(finddisks _)
     #DEVS="$DEVS $(findpartitions _)" 
     if [ "$DEVS" = "" ]; then
@@ -615,7 +615,7 @@ bind_mount
 modprobe dm-mod
 chroot $DESTDIR /usr/sbin/grub-install --target=i386-pc --recheck --debug "$(cat $ANSWER)" > /tmp/grub.log 2>&1
 grub_success=$?
-mkdir -p $DESTDIR/boot/grub/locale
+#mkdir -p $DESTDIR/boot/grub/locale
 cp $DESTDIR/usr/share/locale/en\@quot/LC_MESSAGES/grub.mo $DESTDIR/boot/grub/locale/en.mo
 chroot $DESTDIR /usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg > /dev/null 2>&1
 sync
@@ -861,8 +861,6 @@ configure_system()
                 rm $DESTDIR/home/live/.Xdefaults
                 cp -a /src/.Xdefaults $DESTDIR/home/live/.Xdefaults &>/dev/null
                 chroot ${DESTDIR} chown live:users /home/live -R &> /dev/null
-								# check if this has worked?
-								#chroot ${DESTDIR} sed -i 's/^exec.*openbox-session$/exec dbus-launch openbox-session/' /home/live/.xinitrc &>/dev/null
                 chroot ${DESTDIR} /root/mvuser.sh
                 rm $DESTDIR/root/mvuser.sh
 
@@ -907,7 +905,7 @@ configure_system()
   cp /run/archiso/bootmnt/arch/boot/${arch}/vmlinuz ${DESTDIR}/boot/vmlinuz-linux
   run_mkinitcpio
   # /etc/locale.gen
-  chroot ${DESTDIR} locale-gen
+  chroot ${DESTDIR} /usr/sbin/locale-gen
 
   # Clean up new install 
 	rm -f ${DESTDIR}/usr/bin/abinstall &> /dev/null
@@ -929,18 +927,17 @@ configure_system()
 	rm ${DESTDIR}/etc/systemd/system/autologin@.service &> /dev/null
 	rm ${DESTDIR}/etc/systemd/system/rc-local.service &> /dev/null
 	rm ${DESTDIR}/etc/systemd/system/default.target &> /dev/null
-	chroot ${DESTDIR} systemctl -f enable slim.service || true
+	chroot ${DESTDIR} /usr/bin/systemctl -f enable slim.service || true
 
   # Stop pacman complaining
-  chroot ${DESTDIR} mkdir -p /var/lib/pacman/sync
-  chroot ${DESTDIR} cd /var/lib/pacman/sync
-  chroot ${DESTDIR} touch core.db extra.db community.db
+  chroot ${DESTDIR} /usr/bin/mkdir -p /var/lib/pacman/sync
+  chroot ${DESTDIR} /usr/bin/touch /var/lib/pacman/sync/{core.db,extra.db,community.db}
 
   # Set alsa sound levels and store them
-  chroot ${DESTDIR} amixer sset 'Master Mono' 90% unmute &> /dev/null
-  chroot ${DESTDIR} amixer sset 'Master' 90% unmute &> /dev/null
-  chroot ${DESTDIR} amixer sset 'PCM' 90% unmute &> /dev/null
-  chroot ${DESTDIR} alsactl store
+  chroot ${DESTDIR} /usr/bin/amixer sset 'Master Mono' 90% unmute &> /dev/null
+  chroot ${DESTDIR} /usr/bin/amixer sset 'Master' 90% unmute &> /dev/null
+  chroot ${DESTDIR} /usr/bin/amixer sset 'PCM' 90% unmute &> /dev/null
+  chroot ${DESTDIR} /usr/sbin/alsactl store
 
     S_CONFIG=1
 }
