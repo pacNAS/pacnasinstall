@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.69 | 09-12-2012 | match live abinstall"
+VER="1.70 | 10-12-2012 | remove dbus-launch"
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -862,7 +862,7 @@ configure_system()
                 cp -a /src/.Xdefaults $DESTDIR/home/live/.Xdefaults &>/dev/null
                 chroot ${DESTDIR} chown live:users /home/live -R &> /dev/null
 								# check if this has worked?
-								chroot ${DESTDIR} sed -i 's/^exec.*openbox-session$/exec dbus-launch openbox-session/' /home/live/.xinitrc &>/dev/null
+								#chroot ${DESTDIR} sed -i 's/^exec.*openbox-session$/exec dbus-launch openbox-session/' /home/live/.xinitrc &>/dev/null
                 chroot ${DESTDIR} /root/mvuser.sh
                 rm $DESTDIR/root/mvuser.sh
 
