@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.71 | 10-12-2012 | system_config"
+VER="1.72 | 11-12-2012 | conky additions"
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -537,22 +537,11 @@ hd_config()
 #mkdir -p $DESTDIR/boot/grub
 #nm
 rm $DESTDIR/etc/xdg/autostart/nm-applet.desktop &>/dev/null
-#little bonus
-#cp -ra /etc/skel/.[a-zA-Z0-9]* ${DESTDIR}/root/ &>/dev/null
-#cp -a /src/menu.xml ${DESTDIR}/etc/skel/.config/openbox/menu.xml &>/dev/null
+
 cp -a /src/rc.xml ${DESTDIR}/etc/skel/.config/openbox/rc.xml &>/dev/null
-#cp -a /src/.conkyrc ${DESTDIR}/etc/skel/.conkyrc &>/dev/null
 cp -a /src/.Xdefaults ${DESTDIR}/etc/skel/.Xdefaults &>/dev/null
-#cp -a /src/menu.xml ${DESTDIR}/root/.config/openbox/menu.xml &>/dev/null
-#cp -a /src/rc.xml ${DESTDIR}/root/.config/openbox/rc.xml &>/dev/null
-#cp -a /src/.conkyrc ${DESTDIR}/root/.conkyrc &>/dev/null
-#cp -a /src/.Xdefaults ${DESTDIR}/root/.Xdefaults &>/dev/null
 cp -a /src/oblogout.conf ${DESTDIR}/etc/oblogout.conf &>/dev/null
-#cp -a /src/rc.local ${DESTDIR}/etc/rc.local &>/dev/null
-#cp -a /src/rc.shutdown ${DESTDIR}/etc/rc.shutdown &>/dev/null
-#cp /src/inittab ${DESTDIR}/etc/inittab &>/dev/null
 cp /etc/X11/xorg.conf.d/20-gpudriver.conf ${DESTDIR}/etc/X11/xorg.conf.d/20-gpudriver.conf &>/dev/null
-#cp -a /src/rc.conf ${DESTDIR}/etc/rc.conf &>/dev/null
 }
 
 # preprocess fstab file
@@ -854,8 +843,9 @@ configure_system()
                 cp -a /src/menu.xml $DESTDIR/home/live/.config/openbox/menu.xml
                 rm $DESTDIR/home/live/.config/openbox/rc.xml
                 cp -a /src/rc.xml $DESTDIR/home/live/.config/openbox/rc.xml
-                rm $DESTDIR/home/live/.conkyrc
-                cp -a /src/.conkyrc $DESTDIR/home/live/.conkyrc
+                #rm $DESTDIR/home/live/.conkyrc
+                #cp -a /src/.conkyrc $DESTDIR/home/live/.conkyrc
+								echo "Super+l\$alignr Lock" >> $DESTDIR/home/live/.conkyrc
                 rm $DESTDIR/home/live/.conkyrc1
                 cp -a /src/.conkyrc1 $DESTDIR/home/live/.conkyrc1
                 rm $DESTDIR/home/live/.Xdefaults
