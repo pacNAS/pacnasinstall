@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.72 | 11-12-2012 | conky additions and remove unwanted src files"
+VER="1.73 | 12-12-2012 | remove alsa and skel from install"
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
