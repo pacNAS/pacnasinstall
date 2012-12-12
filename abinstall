@@ -903,6 +903,8 @@ configure_system()
 	rm -rf ${DESTDIR}/vomi &> /dev/null
 	rm -rf ${DESTDIR}/bypass &> /dev/null
 	rm -rf ${DESTDIR}/src &> /dev/null
+	rm -rf ${DESTDIR}/etc/skel &> /dev/null
+  rmdir ${DESTDIR}/etc/skel &> /dev/null
 	rmdir ${DESTDIR}/bypass &> /dev/null
 	rmdir ${DESTDIR}/src &> /dev/null
 	rm ${DESTDIR}/lib/initcpio/archiso_pxe_nbd &> /dev/null
@@ -924,9 +926,9 @@ configure_system()
   chroot ${DESTDIR} /usr/bin/touch /var/lib/pacman/sync/{core.db,extra.db,community.db}
 
   # Set alsa sound levels and store them
-  chroot ${DESTDIR} /usr/bin/amixer sset 'Master Mono' 90% unmute &> /dev/null
-  chroot ${DESTDIR} /usr/bin/amixer sset 'Master' 90% unmute &> /dev/null
-  chroot ${DESTDIR} /usr/bin/amixer sset 'PCM' 90% unmute &> /dev/null
+  #chroot ${DESTDIR} /usr/bin/amixer sset 'Master Mono' 90% unmute &> /dev/null
+  #chroot ${DESTDIR} /usr/bin/amixer sset 'Master' 90% unmute &> /dev/null
+  #chroot ${DESTDIR} /usr/bin/amixer sset 'PCM' 90% unmute &> /dev/null
   chroot ${DESTDIR} /usr/sbin/alsactl store
 
     S_CONFIG=1
