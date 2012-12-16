@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.74 | 13-12-2012 | bind test."
+VER="1.75 | 16-12-2012 | bind test."
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -924,14 +924,6 @@ configure_system()
   # Stop pacman complaining
   chroot ${DESTDIR} /usr/bin/mkdir -p /var/lib/pacman/sync
   chroot ${DESTDIR} /usr/bin/touch /var/lib/pacman/sync/{core.db,extra.db,community.db}
-
-  # Set alsa sound levels and store them
-  bind_mount
-  chroot ${DESTDIR} /usr/bin/amixer sset 'Master Mono' 90% unmute &> /dev/null
-  chroot ${DESTDIR} /usr/bin/amixer sset 'Master' 90% unmute &> /dev/null
-  chroot ${DESTDIR} /usr/bin/amixer sset 'PCM' 90% unmute &> /dev/null
-  chroot ${DESTDIR} /usr/sbin/alsactl store
-  bind_umount
 
     S_CONFIG=1
 }
