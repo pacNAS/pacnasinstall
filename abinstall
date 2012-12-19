@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.76 | 17-12-2012 | bind test."
+VER="1.77 | 19-12-2012 | firefox randomw profile"
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -843,13 +843,13 @@ configure_system()
                 cp -a /src/menu.xml $DESTDIR/home/live/.config/openbox/menu.xml
                 rm $DESTDIR/home/live/.config/openbox/rc.xml
                 cp -a /src/rc.xml $DESTDIR/home/live/.config/openbox/rc.xml
-                #rm $DESTDIR/home/live/.conkyrc
-                #cp -a /src/.conkyrc $DESTDIR/home/live/.conkyrc
 								echo "Super+l\$alignr Lock" >> $DESTDIR/home/live/.conkyrc
-                #rm $DESTDIR/home/live/.conkyrc1
-                #cp -a /src/.conkyrc1 $DESTDIR/home/live/.conkyrc1
-                #rm $DESTDIR/home/live/.Xdefaults
-                #cp -a /src/.Xdefaults $DESTDIR/home/live/.Xdefaults &>/dev/null
+								# create a new random firefox profile
+								profile_dir=${DESTDIR}/home/live/.mozilla/firefox
+								firefox_profile=$(</dev/urandom  tr -dc a-z0-9 | head -c8)
+								mv ${profile_dir}/archbang.default \
+									 ${profile_dir}/${firefox_profile}.default
+								sed -i "s,archbang,$firefox_profile,g" ${profile_dir}/profiles.ini
                 chroot ${DESTDIR} chown live:users /home/live -R &> /dev/null
                 chroot ${DESTDIR} /root/mvuser.sh
                 rm $DESTDIR/root/mvuser.sh
