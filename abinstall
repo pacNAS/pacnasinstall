@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.78 | 20-12-2012 | remove lastmin"
+VER="1.80 | 12-01-2013 | install message"
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -513,14 +513,15 @@ PCT=$(( 100*(++i)/n ))
     echo "XXX"
     cp -pR $f $DESTDIR 2>> ${inst_log}
 done
-) | dialog --title "Installing ArchBang..." --gauge "Copying file..." 7 75
+) | dialog --title "Installing please wait.....depending on your system this may take several minutes'" \
+					 --gauge "Copying file..." 7 75
 
 # test for errors in file
 [[ -s ${inst_log} ]] && _result="${_installationfail}"
 
 # display results
 DIALOG --title "$_result" --exit-label "${_continue_label}" \
-      --textbox "${inst_log}" 18 83
+       --textbox "${inst_log}" 18 83
 
 sync
 S_INSTALL=1
@@ -839,29 +840,20 @@ configure_system()
             done
         elif [ "$CURRENT_SELECTION" = "User-Name" ]; then
                 cp /usr/bin/mvuser.sh $DESTDIR/root/
-					# No longer needed post install 
-               rm $DESTDIR/home/live/.ab_mods
-					# replace .xinitrc maybe sed it in future?
-					rm ${DESTDIR}/home/live/.xinitrc
-					cp -a /src/.xinitrc ${DESTDIR}/home/live/.xinitrc
-					# menu.xml for new install
-               rm $DESTDIR/home/live/.config/openbox/menu.xml
-               cp -a /src/menu.xml $DESTDIR/home/live/.config/openbox/menu.xml
-               # rc.xml for new install
-               rm $DESTDIR/home/live/.config/openbox/rc.xml
-               cp -a /src/rc.xml $DESTDIR/home/live/.config/openbox/rc.xml
-               # Add new keybind to .conkyrc
-					echo "Super+l\$alignr Lock" >> $DESTDIR/home/live/.conkyrc
-					# create a new random firefox profile
-					profile_dir=${DESTDIR}/home/live/.mozilla/firefox
-					firefox_profile=$(</dev/urandom  tr -dc a-z0-9 | head -c8)
-					mv ${profile_dir}/archbang.default \
-						${profile_dir}/${firefox_profile}.default
-					sed -i "s,archbang,$firefox_profile,g" ${profile_dir}/profiles.ini
-					# Set up new user
-               chroot ${DESTDIR} chown live:users /home/live -R &> /dev/null
-               chroot ${DESTDIR} /root/mvuser.sh
-               rm $DESTDIR/root/mvuser.sh
+                rm $DESTDIR/home/live/.config/openbox/menu.xml
+                cp -a /src/menu.xml $DESTDIR/home/live/.config/openbox/menu.xml
+                rm $DESTDIR/home/live/.config/openbox/rc.xml
+                cp -a /src/rc.xml $DESTDIR/home/live/.config/openbox/rc.xml
+								echo "Super+l\$alignr Lock" >> $DESTDIR/home/live/.conkyrc
+								# create a new random firefox profile
+								profile_dir=${DESTDIR}/home/live/.mozilla/firefox
+								firefox_profile=$(</dev/urandom  tr -dc a-z0-9 | head -c8)
+								mv ${profile_dir}/archbang.default \
+									 ${profile_dir}/${firefox_profile}.default
+								sed -i "s,archbang,$firefox_profile,g" ${profile_dir}/profiles.ini
+                chroot ${DESTDIR} chown live:users /home/live -R &> /dev/null
+                chroot ${DESTDIR} /root/mvuser.sh
+                rm $DESTDIR/root/mvuser.sh
 
         elif [ "$CURRENT_SELECTION" = "Config-system" ]; then
     while true; do
@@ -907,13 +899,14 @@ configure_system()
   chroot ${DESTDIR} /usr/sbin/locale-gen
 
   # Clean up new install 
-   rm -f ${DESTDIR}/usr/bin/abinstall &> /dev/null
+	rm -f ${DESTDIR}/usr/bin/abinstall &> /dev/null
+  rm -f ${DESTDIR}/usr/bin/lastmin &> /dev/null
 	rm -f ${DESTDIR}/usr/bin/mvuser.sh &> /dev/null
 	rm -rf ${DESTDIR}/vomi &> /dev/null
 	rm -rf ${DESTDIR}/bypass &> /dev/null
 	rm -rf ${DESTDIR}/src &> /dev/null
 	rm -rf ${DESTDIR}/etc/skel &> /dev/null
-   rmdir ${DESTDIR}/etc/skel &> /dev/null
+  rmdir ${DESTDIR}/etc/skel &> /dev/null
 	rmdir ${DESTDIR}/bypass &> /dev/null
 	rmdir ${DESTDIR}/src &> /dev/null
 	rm ${DESTDIR}/lib/initcpio/archiso_pxe_nbd &> /dev/null
@@ -927,6 +920,7 @@ configure_system()
 	# Enable slim here and remove unwanted services
 	rm ${DESTDIR}/etc/systemd/system/autologin@.service &> /dev/null
 	rm ${DESTDIR}/etc/systemd/system/default.target &> /dev/null
+	rm ${DESTDIR}/etc/systemd/system/lastmin.service &> /dev/null
 	chroot ${DESTDIR} /usr/bin/systemctl -f enable slim.service || true
 
   # Stop pacman complaining
