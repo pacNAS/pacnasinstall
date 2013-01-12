@@ -513,7 +513,7 @@ PCT=$(( 100*(++i)/n ))
     echo "XXX"
     cp -pR $f $DESTDIR 2>> ${inst_log}
 done
-) | dialog --title "Installing please wait.....depending on your system this may take several minutes'" \
+) | dialog --title "Installing please wait... this may take several minutes" \
 					 --gauge "Copying file..." 7 75
 
 # test for errors in file
