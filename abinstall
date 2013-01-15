@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.80 | 12-01-2013 | install message"
+VER="1.81 | 14-01-2013 | install message"
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -510,11 +510,13 @@ do
 PCT=$(( 100*(++i)/n ))
     echo "XXX"
     echo $PCT
+		echo ""
+		echo "Depending on your system this may take several minutes ..."
     echo "XXX"
     cp -pR $f $DESTDIR 2>> ${inst_log}
 done
-) | dialog --title "Installing please wait... this may take several minutes" \
-					 --gauge "Copying file..." 7 75
+) | dialog --title "Installing ArchBang" \
+					 --gauge "Copying file..." 7 75 0
 
 # test for errors in file
 [[ -s ${inst_log} ]] && _result="${_installationfail}"
