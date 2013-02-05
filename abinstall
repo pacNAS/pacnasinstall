@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.81 | 14-01-2013 | install message"
+VER="1.82 | 05-02-2013 | remove g_wheel"
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -841,6 +841,8 @@ configure_system()
                 chroot ${DESTDIR} passwd root && break
             done
         elif [ "$CURRENT_SELECTION" = "User-Name" ]; then
+								# remove g_wheel from sudoers.d
+								rm $DESTDIR/etc/sudoers.d/g_wheel
                 cp /usr/bin/mvuser.sh $DESTDIR/root/
                 rm $DESTDIR/home/live/.config/openbox/menu.xml
                 cp -a /src/menu.xml $DESTDIR/home/live/.config/openbox/menu.xml
