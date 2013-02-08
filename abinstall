@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.83 | 08-02-2013 | remove g_wheel and locale fix"
+VER="1.84 | 08-02-2013 | remove NOPASSWD: from g_wheel"
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -841,8 +841,8 @@ configure_system()
                 chroot ${DESTDIR} passwd root && break
             done
         elif [ "$CURRENT_SELECTION" = "User-Name" ]; then
-								# remove g_wheel from sudoers.d
-								rm $DESTDIR/etc/sudoers.d/g_wheel
+					 # remove NOPASSWD: from g_wheel
+					 sed- i 's|NOPASSWD:||g' $DESTDIR/etc/sudoers.d/g_wheel
                 cp /usr/bin/mvuser.sh $DESTDIR/root/
                 rm $DESTDIR/home/live/.config/openbox/menu.xml
                 cp -a /src/menu.xml $DESTDIR/home/live/.config/openbox/menu.xml
