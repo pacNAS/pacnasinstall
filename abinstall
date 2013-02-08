@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.82 | 05-02-2013 | remove g_wheel"
+VER="1.83 | 08-02-2013 | remove g_wheel and locale fix"
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -900,7 +900,7 @@ configure_system()
   cp /run/archiso/bootmnt/arch/boot/${arch}/vmlinuz ${DESTDIR}/boot/vmlinuz-linux
   run_mkinitcpio
   # /etc/locale.gen
-  chroot ${DESTDIR} /usr/sbin/locale-gen
+  chroot ${DESTDIR} /usr/bin/locale-gen
 
   # Clean up new install 
 	rm -f ${DESTDIR}/usr/bin/abinstall &> /dev/null
