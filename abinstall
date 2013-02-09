@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.84 | 08-02-2013 | remove NOPASSWD: from g_wheel"
+VER="1.85 | 09-02-2013 | remove mkinitcpio-archiso.conf"
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -901,16 +901,16 @@ configure_system()
   run_mkinitcpio
   # /etc/locale.gen
   chroot ${DESTDIR} /usr/bin/locale-gen
-
   # Clean up new install 
+	rm -f ${DESTDIR}/etc/mkinitcpio-archiso.conf &> /dev/null
 	rm -f ${DESTDIR}/usr/bin/abinstall &> /dev/null
-  rm -f ${DESTDIR}/usr/bin/lastmin &> /dev/null
+   rm -f ${DESTDIR}/usr/bin/lastmin &> /dev/null
 	rm -f ${DESTDIR}/usr/bin/mvuser.sh &> /dev/null
 	rm -rf ${DESTDIR}/vomi &> /dev/null
 	rm -rf ${DESTDIR}/bypass &> /dev/null
 	rm -rf ${DESTDIR}/src &> /dev/null
 	rm -rf ${DESTDIR}/etc/skel &> /dev/null
-  rmdir ${DESTDIR}/etc/skel &> /dev/null
+   rmdir ${DESTDIR}/etc/skel &> /dev/null
 	rmdir ${DESTDIR}/bypass &> /dev/null
 	rmdir ${DESTDIR}/src &> /dev/null
 	rm ${DESTDIR}/lib/initcpio/archiso_pxe_nbd &> /dev/null
