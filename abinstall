@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.85 | 12-02-2013 | remove NOPASSWD: from sudoers post install"
+VER="1.85 | 04-03-2013 | archbang.db"
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -543,7 +543,7 @@ rm $DESTDIR/etc/xdg/autostart/nm-applet.desktop &>/dev/null
 
 cp -a /src/rc.xml ${DESTDIR}/etc/skel/.config/openbox/rc.xml &>/dev/null
 cp -a /src/.Xdefaults ${DESTDIR}/etc/skel/.Xdefaults &>/dev/null
-cp -a /src/oblogout.conf ${DESTDIR}/etc/oblogout.conf &>/dev/null
+#cp -a /src/oblogout.conf ${DESTDIR}/etc/oblogout.conf &>/dev/null
 cp /etc/X11/xorg.conf.d/20-gpudriver.conf ${DESTDIR}/etc/X11/xorg.conf.d/20-gpudriver.conf &>/dev/null
 }
 
@@ -929,7 +929,7 @@ configure_system()
 
   # Stop pacman complaining
   chroot ${DESTDIR} /usr/bin/mkdir -p /var/lib/pacman/sync
-  chroot ${DESTDIR} /usr/bin/touch /var/lib/pacman/sync/{core.db,extra.db,community.db}
+  chroot ${DESTDIR} /usr/bin/touch /var/lib/pacman/sync/{archbang.db,core.db,extra.db,community.db}
 
     S_CONFIG=1
 }
