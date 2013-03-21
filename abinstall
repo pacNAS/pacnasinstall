@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.85 | 04-03-2013 | archbang.db"
+VER="1.86 | 21-03-2013 | grub option"
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -575,8 +575,9 @@ bootloader_options=$(cat $ANSWER)
 # This is my new install for grub-bios
 grub-bios() {
 	mkdir -p $DESTDIR/boot/grub/locale
-DEVS=$(finddisks _)
-    #DEVS="$DEVS $(findpartitions _)" 
+	DEVS=$(finddisks _)
+	# add partition option
+   DEVS="$DEVS $(findpartitions _)" 
     if [ "$DEVS" = "" ]; then
         DIALOG --msgbox "${_nohdfound}" 0 0
         return 1
