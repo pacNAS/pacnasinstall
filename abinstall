@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.90 | 29-03-2013 | rc.xml fix"
+VER="1.91 | 03-04-2013 | rc.xml fix"
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -845,7 +845,7 @@ configure_system()
                 cp /usr/bin/mvuser.sh $DESTDIR/root/
                 rm $DESTDIR/home/live/.config/openbox/menu.xml
                 cp -a /src/menu.xml $DESTDIR/home/live/.config/openbox/menu.xml
-                #rm $DESTDIR/home/live/.config/openbox/rc.xml
+                rm $DESTDIR/home/live/.config/openbox/rc.xml
                 #cp -a /src/rc.xml $DESTDIR/home/live/.config/openbox/rc.xml
 								echo "Super+l\$alignr Lock" >> $DESTDIR/home/live/.conkyrc
 								# create a new random firefox profile
@@ -920,13 +920,12 @@ configure_system()
 	rm ${DESTDIR}/lib/initcpio/install/archiso_loop_mnt &> /dev/null
 	rm ${DESTDIR}/lib/initcpio/install/archiso_pxe_nbd &> /dev/null
 
-	# Enable slim here and remove unwanted services
-	rm ${DESTDIR}/etc/systemd/system/autologin@.service &> /dev/null
-  chroot ${DESTDIR} /usr/bin/systemctl -f disable autologin@.service || true
+	# Enable slim here and remove unwanted services 
+  chroot ${DESTDIR} /usr/bin/systemctl -f disable autologin@.service || true	
+  rm ${DESTDIR}/etc/systemd/system/autologin@.service &> /dev/null
 	rm ${DESTDIR}/etc/systemd/system/default.target &> /dev/null
-	chroot ${DESTDIR} /usr/bin/systemctl -f disable default.target || true
+  chroot ${DESTDIR} /usr/bin/systemctl -f disable lastmin.service || true
   rm ${DESTDIR}/etc/systemd/system/lastmin.service &> /dev/null
-	chroot ${DESTDIR} /usr/bin/systemctl -f disable lastmin.service || true
   chroot ${DESTDIR} /usr/bin/systemctl -f enable slim.service || true
 
   # Stop pacman complaining
