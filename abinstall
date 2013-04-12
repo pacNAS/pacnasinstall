@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.91 | 03-04-2013 | rc.xml fix"
+VER="1.92 | 12-04-2013 | host name"
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -846,7 +846,8 @@ configure_system()
                 rm $DESTDIR/home/live/.config/openbox/menu.xml
                 cp -a /src/menu.xml $DESTDIR/home/live/.config/openbox/menu.xml
                 rm $DESTDIR/home/live/.config/openbox/rc.xml
-                #cp -a /src/rc.xml $DESTDIR/home/live/.config/openbox/rc.xml
+								sed -i 's/archbang/arch/g' $DESTDIR/etc/hosts $DESTDIR/etc/hostname
+								#cp -a /src/rc.xml $DESTDIR/home/live/.config/openbox/rc.xml
 								echo "Super+l\$alignr Lock" >> $DESTDIR/home/live/.conkyrc
 								# create a new random firefox profile
 								profile_dir=${DESTDIR}/home/live/.mozilla/firefox
