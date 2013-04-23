@@ -845,7 +845,7 @@ configure_system()
                 cp /usr/bin/mvuser.sh $DESTDIR/root/
                 rm $DESTDIR/home/live/.config/openbox/menu.xml
                 cp -a /src/menu.xml $DESTDIR/home/live/.config/openbox/menu.xml
-                rm $DESTDIR/home/live/.config/openbox/rc.xml
+                #rm $DESTDIR/home/live/.config/openbox/rc.xml
 								sed -i 's/archbang/arch/g' $DESTDIR/etc/hosts $DESTDIR/etc/hostname
 								#cp -a /src/rc.xml $DESTDIR/home/live/.config/openbox/rc.xml
 								echo "Super+l\$alignr Lock" >> $DESTDIR/home/live/.conkyrc
