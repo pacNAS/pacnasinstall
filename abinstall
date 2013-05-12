@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.92 | 12-04-2013 | host name"
+VER="1.93 | 12-05-2013 | new obmenu-generator menu"
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -843,8 +843,8 @@ configure_system()
 					 			# remove NOPASSWD: from %wheel sudoers
 					 			sed -i '/^%wheel/s/NOPASSWD://g' $DESTDIR/etc/sudoers
                 cp /usr/bin/mvuser.sh $DESTDIR/root/
-                rm $DESTDIR/home/live/.config/openbox/menu.xml
-                cp -a /src/menu.xml $DESTDIR/home/live/.config/openbox/menu.xml
+                rm $DESTDIR/home/live/.config/obmenu-generator/schema.pl
+                cp -a /src/schema.pl $DESTDIR/home/live/.config/obmenu-generator/schema.pl
                 #rm $DESTDIR/home/live/.config/openbox/rc.xml
 								sed -i 's/archbang/arch/g' $DESTDIR/etc/hosts $DESTDIR/etc/hostname
 								#cp -a /src/rc.xml $DESTDIR/home/live/.config/openbox/rc.xml
