@@ -8,7 +8,7 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.92 | 12-04-2013 | host name"
+VER="1.95 | 02-06-2013 | fix /usr/sbin error"
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
@@ -590,13 +590,13 @@ grub-bios() {
     DIALOG --infobox "${_installinggrub}" 3 30
 
     # freeze xfs filesystems if any, to enable grub installation on xfs filesystems
-    if [ -x /usr/sbin/xfs_freeze ]; then
+    if [ -x /usr/bin/xfs_freeze ]; then
      if [ "$(blkid -o value -s TYPE -p $(findmnt -o source -n $DESTDIR/boot))" == "xfs" ];then
-      /usr/sbin/xfs_freeze -f $DESTDIR/boot > /dev/null 2>&1
+      /usr/bin/xfs_freeze -f $DESTDIR/boot > /dev/null 2>&1
       unfreezeboot=y
      fi
      if [ "$(blkid -o value -s TYPE -p $(findmnt -o source -n $DESTDIR))" == "xfs" ];then
-      /usr/sbin/xfs_freeze -f $DESTDIR/ > /dev/null 2>&1
+      /usr/bin/xfs_freeze -f $DESTDIR/ > /dev/null 2>&1
       unfreezeroot=y
      fi
     fi
@@ -604,19 +604,19 @@ grub-bios() {
 bind_mount
 
 modprobe dm-mod
-chroot $DESTDIR /usr/sbin/grub-install --target=i386-pc --recheck --debug "$(cat $ANSWER)" > /tmp/grub.log 2>&1
+chroot $DESTDIR /usr/bin/grub-install --target=i386-pc --recheck --debug "$(cat $ANSWER)" > /tmp/grub.log 2>&1
 grub_success=$?
 #mkdir -p $DESTDIR/boot/grub/locale
 cp $DESTDIR/usr/share/locale/en\@quot/LC_MESSAGES/grub.mo $DESTDIR/boot/grub/locale/en.mo
-chroot $DESTDIR /usr/sbin/grub-mkconfig -o /boot/grub/grub.cfg > /dev/null 2>&1
+chroot $DESTDIR /usr/bin/grub-mkconfig -o /boot/grub/grub.cfg > /dev/null 2>&1
 sync
 
 bind_umount
 
 	# unfreeze xfs filesystems if any
-    if [ -x /usr/sbin/xfs_freeze ]; then
-     [ -z "$unfreezeboot" ] && /usr/sbin/xfs_freeze -u $DESTDIR/boot > /dev/null 2>&1
-     [ -z "$unfreezeroot" ] && /usr/sbin/xfs_freeze -u $DESTDIR/ > /dev/null 2>&1
+    if [ -x /usr/bin/xfs_freeze ]; then
+     [ -z "$unfreezeboot" ] && /usr/bin/xfs_freeze -u $DESTDIR/boot > /dev/null 2>&1
+     [ -z "$unfreezeroot" ] && /usr/bin/xfs_freeze -u $DESTDIR/ > /dev/null 2>&1
     fi
 
 cat $DESTDIR/tmp/grub.log >$LOG
@@ -843,9 +843,10 @@ configure_system()
 					 			# remove NOPASSWD: from %wheel sudoers
 					 			sed -i '/^%wheel/s/NOPASSWD://g' $DESTDIR/etc/sudoers
                 cp /usr/bin/mvuser.sh $DESTDIR/root/
-                rm $DESTDIR/home/live/.config/openbox/menu.xml
-                cp -a /src/menu.xml $DESTDIR/home/live/.config/openbox/menu.xml
-                rm $DESTDIR/home/live/.config/openbox/rc.xml
+                rm $DESTDIR/home/live/.config/obmenu-generator/schema.pl
+                cp -a /src/schema.pl $DESTDIR/home/live/.config/obmenu-generator/schema.pl
+                cp -a /src/.bash_profile $DESTDIR/home/live/
+                #rm $DESTDIR/home/live/.config/openbox/rc.xml
 								sed -i 's/archbang/arch/g' $DESTDIR/etc/hosts $DESTDIR/etc/hostname
 								#cp -a /src/rc.xml $DESTDIR/home/live/.config/openbox/rc.xml
 								echo "Super+l\$alignr Lock" >> $DESTDIR/home/live/.conkyrc
@@ -922,12 +923,12 @@ configure_system()
 	rm ${DESTDIR}/lib/initcpio/install/archiso_pxe_nbd &> /dev/null
 
 	# Enable slim here and remove unwanted services 
-  chroot ${DESTDIR} /usr/bin/systemctl -f disable autologin@.service || true	
-  rm ${DESTDIR}/etc/systemd/system/autologin@.service &> /dev/null
-	rm ${DESTDIR}/etc/systemd/system/default.target &> /dev/null
+  #chroot ${DESTDIR} /usr/bin/systemctl -f disable autologin@.service || true	
+  #rm ${DESTDIR}/etc/systemd/system/autologin@.service &> /dev/null
+	#rm ${DESTDIR}/etc/systemd/system/default.target &> /dev/null
   chroot ${DESTDIR} /usr/bin/systemctl -f disable lastmin.service || true
   rm ${DESTDIR}/etc/systemd/system/lastmin.service &> /dev/null
-  chroot ${DESTDIR} /usr/bin/systemctl -f enable slim.service || true
+  #chroot ${DESTDIR} /usr/bin/systemctl -f enable slim.service || true
 
   # Stop pacman complaining
   chroot ${DESTDIR} /usr/bin/mkdir -p /var/lib/pacman/sync
