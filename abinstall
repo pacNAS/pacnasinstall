@@ -515,7 +515,7 @@ PCT=$(( 100*(++i)/n ))
     echo "XXX"
     cp -pR $f $DESTDIR 2>> ${inst_log}
 done
-) | dialog --title "Installing ArchBang" \
+) | dialog --title "Installing pacNAS" \
 					 --gauge "Copying file..." 7 75 0
 
 # test for errors in file
@@ -731,7 +731,7 @@ set_clock()
 
 installer_locale()
 {
-  dialog --backtitle "archbang.org" --radiolist "Choose your language:" 15 40 5 \
+  dialog --backtitle "pacnas.org" --radiolist "Choose your language:" 15 40 5 \
     1 English on \
     2 American off \
     2>$ANSWER 
@@ -847,15 +847,15 @@ configure_system()
                 cp -a /src/schema.pl $DESTDIR/home/live/.config/obmenu-generator/schema.pl
                 cp -a /src/.bash_profile $DESTDIR/home/live/
                 #rm $DESTDIR/home/live/.config/openbox/rc.xml
-								sed -i 's/archbang/arch/g' $DESTDIR/etc/hosts $DESTDIR/etc/hostname
+								sed -i 's/pacnas/arch/g' $DESTDIR/etc/hosts $DESTDIR/etc/hostname
 								#cp -a /src/rc.xml $DESTDIR/home/live/.config/openbox/rc.xml
 								#echo "Super+l\$alignr Lock" >> $DESTDIR/home/live/.conkyrc
 								# create a new random firefox profile
 								profile_dir=${DESTDIR}/home/live/.mozilla/firefox
 								firefox_profile=$(</dev/urandom  tr -dc a-z0-9 | head -c8)
-								mv ${profile_dir}/archbang.default \
+								mv ${profile_dir}/pacnas.default \
 									 ${profile_dir}/${firefox_profile}.default
-								sed -i "s,archbang,$firefox_profile,g" ${profile_dir}/profiles.ini
+								sed -i "s,pacnas,$firefox_profile,g" ${profile_dir}/profiles.ini
                 chroot ${DESTDIR} chown live:users /home/live -R &> /dev/null
                 chroot ${DESTDIR} /root/mvuser.sh
                 rm $DESTDIR/root/mvuser.sh
@@ -935,7 +935,7 @@ configure_system()
 
   # Stop pacman complaining
   chroot ${DESTDIR} /usr/bin/mkdir -p /var/lib/pacman/sync
-  chroot ${DESTDIR} /usr/bin/touch /var/lib/pacman/sync/{archbang.db,core.db,extra.db,community.db}
+  chroot ${DESTDIR} /usr/bin/touch /var/lib/pacman/sync/{pacnas.db,core.db,extra.db,community.db}
 
     S_CONFIG=1
 }

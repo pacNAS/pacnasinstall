@@ -1,7 +1,7 @@
 # abinstall_msg.en 
 # Main Variables and messages for dialog
 
- TITLE="ArchBang Linux Installation"
+ TITLE="pacNAS Installation"
   _yes="Yes"
   _no="No"
   _cancel="Cancel"
@@ -138,7 +138,7 @@ installation."
   _quittext="Quit"
   _installationfinished='Installation finished!'
   _cancelinstall="Cancel installation?"
-  _instwelcomemessage="Welcome to the ArchBang installation program. \nSimply follow the steps in order."
+  _instwelcomemessage="Welcome to the pacNAS installation program. \nSimply follow the steps in order."
   _forgotsystemconf="You forgot system configuration. Press enter."
   _forgotinstalling="Installing before configuring would seem more logical. Press enter."
   _forgotpreparehd="Prepare HD first or mount what you want in /mnt/install and type "perso" here. Press enter."
