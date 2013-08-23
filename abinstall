@@ -83,7 +83,7 @@ PART_ROOT=
 
 # default filesystem specs (the + is bootable flag)
 # <mountpoint>:<partsize>:<fstype>[:+]
-DEFAULTFS="/boot:32:ext2:+ swap:512:swap /:7000:reiserfs /home:*:reiserfs"
+DEFAULTFS="/boot:32:ext2:+ swap:512:swap /:6144:ext4"
 
 # install stages
 S_SRC=0         # choose install medium
