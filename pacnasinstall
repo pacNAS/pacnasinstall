@@ -8,13 +8,13 @@ fi
 
 # some variables that might be modified by options
 
-VER="1.96 | 29-06-2013 | slim added again"
+VER="1.00 | 05-09-2013 | first release"
 SI_BYPASS=0
 SC_BYPASS=0
 EDITOR="nano"
 DESTDIR=/mnt/install
 SRC_LANG="/src/lang"
-[[ -f ${SRC_LANG}/abinstall_msg.en ]] || SRC_LANG="./src/lang"
+[[ -f ${SRC_LANG}/pacnas_msg.en ]] || SRC_LANG="./src/lang"
 
 # help for options
 options_usage() {
@@ -22,12 +22,12 @@ echo
 echo "usage: `basename $0` [ -h -i -c -v ] [ -d <destdir> ] [ -e <editor> ]"
 echo
 echo "  -h | --help 			What options are available in this script"
-echo "  -d | --destdir 		Installation directory (defaults to /mnt/install)"	
+echo "  -d | --destdir 		Installation directory (defaults to /mnt/install)"
 echo "  -e | --editor 		Which editor to use - must be preinstalled (defaults to nano)"
 echo "  -i | --system_installed	Bypass the 'installation' section of the installer"
 echo "  -c | --system_configured Bypass the 'configuration' section of the installer"
-echo "  -v | --version     Display current abinstall version"
-echo 
+echo "  -v | --version     Display current installer version"
+echo
 echo "Options -i and -c are useful if you've already installed and want to test a change to the installer"
 echo
 }
@@ -37,7 +37,7 @@ echo
 #-v|--VER) <do stuff>; ;; possibly echo $VER then exit ???
 TMPGETOPT=$(getopt -o cvd:e:hi --long system_configured,version,destdir:,editor:,help,system_installed -n $0 -- "$@")
 
-if [ $? != 0 ]; then 
+if [ $? != 0 ]; then
   echo "Terminating..." >&2
   options_usage
   exit 1
@@ -48,7 +48,7 @@ eval set -- "$TMPGETOPT"
 while true
 do
   case "$1" in
-    -c|--system_configured) SC_BYPASS=1; shift;; 
+    -c|--system_configured) SC_BYPASS=1; shift;;
     -d|--destdir) DESTDIR=$2; shift 2;;
     -e|--editor) EDITOR=$2; shift 2;;
     -h|--help) 	options_usage; exit 1;;
@@ -60,10 +60,10 @@ do
 done
 #  Done with options
 
- 
+
 ANSWER="/tmp/.setup"	# dialog answer
 LOG="/dev/tty6"			# use the first VT not dedicated to a running console
-mkdir -p $DESTDIR		# install directory		
+mkdir -p $DESTDIR		# install directory
 arch=$(uname -m)		# archicture
 
 # abstract the common pacman args
@@ -76,14 +76,14 @@ PACKAGES=
 
 # clock
 HARDWARECLOCK="localtime"
-TIMEZONE="America/Montreal"
+TIMEZONE="America/Los_Angeles"
 
 # partitions
 PART_ROOT=
 
 # default filesystem specs (the + is bootable flag)
 # <mountpoint>:<partsize>:<fstype>[:+]
-DEFAULTFS="/boot:32:ext2:+ swap:512:swap /:7000:reiserfs /home:*:reiserfs"
+DEFAULTFS="/boot:32:ext2:+ swap:512:swap /:7000:btrfs /home:*:btrfs"
 
 # install stages
 S_SRC=0         # choose install medium
@@ -296,6 +296,7 @@ _mkfs() {
                 ext2)     mke2fs "${_device}" >$LOG 2>&1; ret=$? ;;
                 ext3)     mke2fs -j ${_device} >$LOG 2>&1; ret=$? ;;
                 ext4)     mke2fs -t ext4 ${_device} >$LOG 2>&1; ret=$? ;;
+                btrfs)    mkfs.btrfs -j ${_device} >$LOG 2>&1; ret=$? ;;
                 nilfs2)   mkfs.nilfs2 ${_device} >$LOG 2>&1; ret=$? ;;
                 # don't handle anything else here, we will error later
             esac
@@ -403,6 +404,7 @@ mountpoints() {
         [ "$(which mkreiserfs 2>/dev/null)" ] && FSOPTS="reiserfs Reiser3"
         [ "$(which mkfs.xfs 2>/dev/null)" ]   && FSOPTS="$FSOPTS xfs XFS"
         [ "$(which mkfs.jfs 2>/dev/null)" ]   && FSOPTS="$FSOPTS jfs JFS"
+        [ "$(which mkfs.btrfs 2>/dev/null)" ]   && FSOPTS="$FSOPTS btrfs Btrfs"
         [ "$(which mkfs.ext2 2>/dev/null)" ]  && FSOPTS="$FSOPTS ext2 ext2 ext3 ext3 ext4 ext4"
 
         # Select mountpoints
@@ -532,17 +534,13 @@ DIALOG --infobox "${_configuringsystem}" 6 40
 hd_config
 auto_fstab
 }
-    
+
 # Set up new install copy over files from /src
 hd_config()
 {
 # grub-bios directory setup
 #mkdir -p $DESTDIR/boot/grub
 #nm
-rm $DESTDIR/etc/xdg/autostart/nm-applet.desktop &>/dev/null
-
-cp -a /src/.Xdefaults ${DESTDIR}/etc/skel/.Xdefaults &>/dev/null
-cp /etc/X11/xorg.conf.d/20-gpudriver.conf ${DESTDIR}/etc/X11/xorg.conf.d/20-gpudriver.conf &>/dev/null
 }
 
 # preprocess fstab file
@@ -575,7 +573,7 @@ grub-bios() {
 	mkdir -p $DESTDIR/boot/grub/locale
 	DEVS=$(finddisks _)
 	# add partition option
-   DEVS="$DEVS $(findpartitions _)" 
+   DEVS="$DEVS $(findpartitions _)"
     if [ "$DEVS" = "" ]; then
         DIALOG --msgbox "${_nohdfound}" 0 0
         return 1
@@ -637,7 +635,7 @@ sl_bootdir_fs=$(df -kT $DESTDIR/boot | grep $DESTDIR | awk '{print $2}')
 local SYSLINUXLOG=/tmp/syslinux.log
 
 case "$sl_bootdir_fs" in
-  ext[2-4]|btrfs) 
+  ext[2-4]|btrfs)
     sl_rootdir_dev=$(df -kT $DESTDIR | grep $DESTDIR | awk '{print $1}')
     sl_rootdir_uuid=$(lsblk -fn $sl_rootdir_dev | awk '{print $3}')
     get_bl_options
@@ -645,15 +643,15 @@ case "$sl_bootdir_fs" in
     if [ "$?" -eq "0" ]; then
       sed -i "s|/dev/sda3|UUID=$sl_rootdir_uuid|g" ${DESTDIR}/boot/syslinux/syslinux.cfg >> $SYSLINUXLOG 2>&1
       [ ! -z "$bootloader_options" ] && sed -i "/\t.*APPEND.*/s|$| $bootloader_options|" ${DESTDIR}/boot/syslinux/syslinux.cfg >> $SYSLINUXLOG 2>&1
-      DIALOG --yesno "${_syslinuxcheckcfg}" 8 50 && $EDITOR $DESTDIR/boot/syslinux/syslinux.cfg 
+      DIALOG --yesno "${_syslinuxcheckcfg}" 8 50 && $EDITOR $DESTDIR/boot/syslinux/syslinux.cfg
       DIALOG --msgbox "${_instsyslinuxsuccess}" 0 0
       S_BOOTLOADER=1
     else
-      DIALOG --yesno "${_instsyslinuxfailure}" 8 50 && DIALOG --textbox $SYSLINUXLOG 22 70 
+      DIALOG --yesno "${_instsyslinuxfailure}" 8 50 && DIALOG --textbox $SYSLINUXLOG 22 70
       S_BOOTLOADER=99
     fi
     ;;
-  *) 
+  *)
     echo ${_syslinuxwrongfs}
     read && return 1
     ;;
@@ -731,14 +729,14 @@ set_clock()
 
 installer_locale()
 {
-  dialog --backtitle "archbang.org" --radiolist "Choose your language:" 15 40 5 \
+  dialog --backtitle "pacnas.org" --radiolist "Choose your language:" 15 40 5 \
     1 English on \
     2 American off \
-    2>$ANSWER 
+    2>$ANSWER
 
     case $(cat $ANSWER) in
-      "1") . ${SRC_LANG}/abinstall_msg.en;;
-      "2") . ${SRC_LANG}/abinstall_msg.en;;
+      "1") . ${SRC_LANG}/pacnas_msg.en;;
+      "2") . ${SRC_LANG}/pacnas_msg.en;;
       *) DONE=1;;
     esac
   [[ ! -s $ANSWER ]] && exit 1
@@ -843,19 +841,10 @@ configure_system()
 					 			# remove NOPASSWD: from %wheel sudoers
 					 			sed -i '/^%wheel/s/NOPASSWD://g' $DESTDIR/etc/sudoers
                 cp /usr/bin/mvuser.sh $DESTDIR/root/
-                rm $DESTDIR/home/live/.config/obmenu-generator/schema.pl
-                cp -a /src/schema.pl $DESTDIR/home/live/.config/obmenu-generator/schema.pl
                 cp -a /src/.bash_profile $DESTDIR/home/live/
-                #rm $DESTDIR/home/live/.config/openbox/rc.xml
-								sed -i 's/archbang/arch/g' $DESTDIR/etc/hosts $DESTDIR/etc/hostname
-								#cp -a /src/rc.xml $DESTDIR/home/live/.config/openbox/rc.xml
-								#echo "Super+l\$alignr Lock" >> $DESTDIR/home/live/.conkyrc
-								# create a new random firefox profile
-								profile_dir=${DESTDIR}/home/live/.mozilla/firefox
-								firefox_profile=$(</dev/urandom  tr -dc a-z0-9 | head -c8)
-								mv ${profile_dir}/archbang.default \
-									 ${profile_dir}/${firefox_profile}.default
-								sed -i "s,archbang,$firefox_profile,g" ${profile_dir}/profiles.ini
+
+				sed -i 's/pacnas/arch/g' $DESTDIR/etc/hosts $DESTDIR/etc/hostname
+
                 chroot ${DESTDIR} chown live:users /home/live -R &> /dev/null
                 chroot ${DESTDIR} /root/mvuser.sh
                 rm $DESTDIR/root/mvuser.sh
@@ -877,12 +866,10 @@ configure_system()
             "/etc/resolv.conf"          "${_resolvconftext}" \
             "/etc/hostname"				 "${_hostnametext}" \
             "/etc/hosts"                "${_hoststext}" \
-            "/etc/X11/xorg.conf.d/01-keyboard-layout.conf" "${_xorgkblayouttext}" \
             "/etc/vconsole.conf" 		 "${_vconsoletext}" \
             "/etc/locale.conf" 			 "${_localeconftext}" \
             "/etc/locale.gen"           "${_localegentext}" \
             "/etc/pacman.d/mirrorlist"  "${_mirrorlisttext}" \
-            "/etc/X11/xorg.conf.d/10-evdev.conf"  "${_xorgevdevconftext}" \
             "${_return_label}"        "${_return_label}" 2>$ANSWER || CURRENT_SELECTION="${_return_label}"
         CURRENT_SELECTION="$(cat $ANSWER)"
 
@@ -903,33 +890,31 @@ configure_system()
   # /etc/locale.gen
   chroot ${DESTDIR} /usr/bin/locale-gen
 
-  # Clean up new install 
-	rm -f ${DESTDIR}/usr/bin/abinstall &> /dev/null
+  # Clean up new install
+  rm -f ${DESTDIR}/usr/bin/pacnasinstall &> /dev/null
   rm -f ${DESTDIR}/usr/bin/lastmin &> /dev/null
-	rm -f ${DESTDIR}/usr/bin/mvuser.sh &> /dev/null
-	rm -rf ${DESTDIR}/vomi &> /dev/null
-	rm -rf ${DESTDIR}/bypass &> /dev/null
-	rm -rf ${DESTDIR}/src &> /dev/null
-	rm -rf ${DESTDIR}/etc/skel &> /dev/null
+  rm -f ${DESTDIR}/usr/bin/mvuser.sh &> /dev/null
+  rm -rf ${DESTDIR}/vomi &> /dev/null
+
+  rm -rf ${DESTDIR}/bypass &> /dev/null
+  rm -rf ${DESTDIR}/src &> /dev/null
+  rm -rf ${DESTDIR}/etc/skel &> /dev/null
+
   rmdir ${DESTDIR}/etc/skel &> /dev/null
-	rmdir ${DESTDIR}/bypass &> /dev/null
-	rmdir ${DESTDIR}/src &> /dev/null
-	rm ${DESTDIR}/lib/initcpio/archiso_pxe_nbd &> /dev/null
-	rm ${DESTDIR}/lib/initcpio/hooks/archiso &> /dev/null
-	rm ${DESTDIR}/lib/initcpio/hooks/archiso_loop_mnt &> /dev/null
-	rm ${DESTDIR}/lib/initcpio/hooks/archiso_pxe_nbd &> /dev/null
-	rm ${DESTDIR}/lib/initcpio/install/archiso &> /dev/null
-	rm ${DESTDIR}/lib/initcpio/install/archiso_loop_mnt &> /dev/null
-	rm ${DESTDIR}/lib/initcpio/install/archiso_pxe_nbd &> /dev/null
+  rmdir ${DESTDIR}/bypass &> /dev/null
+  rmdir ${DESTDIR}/src &> /dev/null
 
-	# Enable slim here and remove unwanted services
-  #chroot ${DESTDIR} /usr/bin/systemctl -f disable autologin@.service || true
-	rm ${DESTDIR}/etc/systemd/system/getty@tty1.service.d/autologin.conf &> /dev/null
-  #rm ${DESTDIR}/etc/systemd/system/autologin@.service &> /dev/null
+  rm ${DESTDIR}/lib/initcpio/archiso_pxe_nbd &> /dev/null
+  rm ${DESTDIR}/lib/initcpio/hooks/archiso &> /dev/null
+  rm ${DESTDIR}/lib/initcpio/hooks/archiso_loop_mnt &> /dev/null
+  rm ${DESTDIR}/lib/initcpio/hooks/archiso_pxe_nbd &> /dev/null
+  rm ${DESTDIR}/lib/initcpio/install/archiso &> /dev/null
+  rm ${DESTDIR}/lib/initcpio/install/archiso_loop_mnt &> /dev/null
+  rm ${DESTDIR}/lib/initcpio/install/archiso_pxe_nbd &> /dev/null
 
-	rm ${DESTDIR}/etc/systemd/system/default.target &> /dev/null
+  rm ${DESTDIR}/etc/systemd/system/default.target &> /dev/null
   chroot ${DESTDIR} /usr/bin/systemctl -f disable lastmin.service || true
-	chroot ${DESTDIR} /usr/bin/systemctl -f disable multi-user.target || true
+  chroot ${DESTDIR} /usr/bin/systemctl -f disable multi-user.target || true
   rm ${DESTDIR}/etc/systemd/system/lastmin.service &> /dev/null
   chroot ${DESTDIR} /usr/bin/systemctl -f enable slim.service || true
 
@@ -992,7 +977,7 @@ mainmenu()
         "4")
             if [ "$_system_is_installed" == "1" ] || [ $SI_BYPASS = 1 ]; then
              configure_system;_system_is_configured=1
-            else 
+            else
              echo "$_forgotinstalling"
              read
             fi

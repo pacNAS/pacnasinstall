@@ -1,7 +1,7 @@
-# abinstall_msg.en 
+# pacnasinstall_msg.en 
 # Main Variables and messages for dialog
 
- TITLE="ArchBang Linux Installation"
+ TITLE="PacNas Installation"
   _yes="Yes"
   _no="No"
   _cancel="Cancel"
