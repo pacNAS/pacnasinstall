@@ -83,7 +83,7 @@ PART_ROOT=
 
 # default filesystem specs (the + is bootable flag)
 # <mountpoint>:<partsize>:<fstype>[:+]
-DEFAULTFS="/boot:32:ext2:+ swap:512:swap /:7000:btrfs /home:*:btrfs"
+DEFAULTFS="/boot:32:ext2:+ swap:512:swap /:6144:btrfs /home:*:btrfs"
 
 # install stages
 S_SRC=0         # choose install medium
@@ -517,7 +517,7 @@ PCT=$(( 100*(++i)/n ))
     echo "XXX"
     cp -pR $f $DESTDIR 2>> ${inst_log}
 done
-) | dialog --title "Installing ArchBang" \
+) | dialog --title "Installing pacNAS" \
 					 --gauge "Copying file..." 7 75 0
 
 # test for errors in file
@@ -920,7 +920,7 @@ configure_system()
 
   # Stop pacman complaining
   chroot ${DESTDIR} /usr/bin/mkdir -p /var/lib/pacman/sync
-  chroot ${DESTDIR} /usr/bin/touch /var/lib/pacman/sync/{archbang.db,core.db,extra.db,community.db}
+  chroot ${DESTDIR} /usr/bin/touch /var/lib/pacman/sync/{pacnas.db,core.db,extra.db,community.db}
 
     S_CONFIG=1
 }
