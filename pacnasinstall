@@ -541,6 +541,7 @@ hd_config()
 # grub-bios directory setup
 #mkdir -p $DESTDIR/boot/grub
 #nm
+local i=0
 }
 
 # preprocess fstab file
@@ -729,14 +730,14 @@ set_clock()
 
 installer_locale()
 {
-  dialog --backtitle "pacnas.org" --radiolist "Choose your language:" 15 40 5 \
+  dialog --backtitle "${SRC_LANG} -- pacnas.org" --radiolist "Choose your language:" 15 40 5 \
     1 English on \
     2 American off \
     2>$ANSWER
 
     case $(cat $ANSWER) in
-      "1") . ${SRC_LANG}/pacnas_msg.en;;
-      "2") . ${SRC_LANG}/pacnas_msg.en;;
+      "1") . ${SRC_LANG}/pacnasinstall_msg.en;;
+      "2") . ${SRC_LANG}/pacnasinstall_msg.en;;
       *) DONE=1;;
     esac
   [[ ! -s $ANSWER ]] && exit 1
