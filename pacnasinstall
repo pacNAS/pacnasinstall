@@ -728,19 +728,21 @@ set_clock()
     S_CLOCK=1
 }
 
+# this is right now pretty senseless, since there is just one language.
 installer_locale()
 {
-  dialog --backtitle "${SRC_LANG} -- pacnas.org" --radiolist "Choose your language:" 15 40 5 \
-    1 English on \
-    2 American off \
-    2>$ANSWER
-
-    case $(cat $ANSWER) in
-      "1") . ${SRC_LANG}/pacnasinstall_msg.en;;
-      "2") . ${SRC_LANG}/pacnasinstall_msg.en;;
-      *) DONE=1;;
-    esac
-  [[ ! -s $ANSWER ]] && exit 1
+#  dialog --backtitle "${SRC_LANG} -- pacnas.org" --radiolist "Choose your language:" 15 40 5 \
+#    1 English on \
+#    2 American off \
+#    2>$ANSWER
+#
+#    case $(cat $ANSWER) in
+#      "1") . ${SRC_LANG}/pacnasinstall_msg.en;;
+#      "2") . ${SRC_LANG}/pacnasinstall_msg.en;;
+#      *) DONE=1;;
+#    esac
+#  [[ ! -s $ANSWER ]] && exit 1
+    . ${SRC_LANG}/pacnasinstall_msg.en
 }
 
 # could get rid of this function by going straight to prepare drive from main menu
