@@ -15,9 +15,9 @@ TEXTDOMAINDIR=.
 ANSWER="/tmp/.setup"
 TITLE=$"pacNAS Installation - v$PACNAS_VERSION"
 # use the first VT not dedicated to a running console
-#LOG="/dev/tty6"
-LOG="/tmp/install.log"
-touch $LOG
+LOG="/dev/tty6"
+#LOG="/tmp/install.log"
+#touch $LOG
 
 # don't use /mnt because it's intended to mount other things there!
 DESTDIR="/mnt/install"
