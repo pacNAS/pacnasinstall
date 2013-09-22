@@ -3,8 +3,8 @@
 # Adopted for pacNAS by Markus M. May <triplem@pacnas.org>
 TEXTDOMAIN=pacnas_installer
 
-ANSWER="/tmp/.lg"
-TITLE=$"pacNAS Language Setting"
+ANSWER="/tmp/.kb"
+TITLE=$"pacNAS Keyboard Setting"
 
 if [[ "${1}" = "--setup" ]]; then
     EXIT=$"Return to Main Menu"
@@ -14,10 +14,11 @@ fi
 
 abort()
 {
-    DIALOG --yesno $"Abort Language Setting?" 6 42 || return 0
-    [[ -e /tmp/.lg ]] && rm -f /tmp/.lg
-    [[ -e /tmp/.language ]] && rm -f /tmp/.language
-        [[ -e /tmp/.lg-running ]] && rm /tmp/.lg-running
+    DIALOG --yesno $"Abort Keyboard Setting?" 6 42 || return 0
+    [[ -e /tmp/.kb ]] && rm -f /tmp/.kb
+    [[ -e /tmp/.keymap ]] && rm -f /tmp/.keymap
+    [[ -e /tmp/.kb-running ]] && rm /tmp/.kb-running
+
     clear
     exit 1
 }
@@ -32,35 +33,33 @@ DIALOG() {
     return $?
 }
 
-error_lgset()
+error_kbset()
 {
     DIALOG --msgbox $"An error occured, your current language was not selected." 0 0
 }
 
-dolanguages() {
+dokeymaps() {
+    KBDDIR="/usr/share/kbd/keymaps"
+
     # "Scanning for locales..."
-    LOCALES=
-    for i in $(cat /etc/locale.gen | grep .UTF-8|cut -c 2-12|grep -e '[a-z]*\.UTF-8$'); do
-        LOCALES="${LOCALES} ${i} -"
+    KEYMAPS=
+    for i in $(find $KBDDIR -name "*.gz" | sort); do
+        KEYMAPS="$KEYMAPS ${i##$KBDDIR/} -"
     done
 
     CANCEL=""
-    DIALOG --menu $"Select A Locale" 22 60 16 ${LOCALES} 2>${ANSWER} || CANCEL="1"
+    DIALOG --menu $"Select A Keymap" 22 60 16 ${KEYMAPS} 2>${ANSWER} || CANCEL="1"
     if [[ "${CANCEL}" = "1" ]]; then
         S_NEXTITEM="1"
         return 1
     fi
-    locale=$(cat ${ANSWER})
-    echo ${locale} > /tmp/.locale
-    if [[ "${locale}" ]]; then
-        cp /etc/locale.gen /tmp/locale.gen
-        sed -i "s/#\(${locale}\)/\1/" /tmp/locale.gen
-        echo "LANG=${locale}" > /tmp/locale.conf
-        echo "LC_COLLATE=C" >> /tmp/locale.conf
+    keymap=$(cat ${ANSWER})
+    echo ${keymap} > /tmp/.keymap
+    if [[ "${keymap}" ]]; then
+        loadkeys $KBDDIR/${keymap}
     fi
 S_NEXTITEM=2
 }
-
 
 mainmenu() {
     if [[ -n "${S_NEXTITEM}" ]]; then
@@ -70,14 +69,14 @@ mainmenu() {
     fi
     DIALOG ${DEFAULT} --backtitle "${TITLE}" --title " MAIN MENU " \
                 --menu $"Use the UP and DOWN arrows to navigate menus.\nUse TAB to switch between buttons and ENTER to select." 17 58 13 \
-        "1" $"Set Locale" \
+        "1" $"Set Keymap" \
         "2" "${EXIT}" 2>${ANSWER}
     case $(cat ${ANSWER}) in
         "1")
-            dolanguages
+            dokeymaps
             ;;
         "2")
-            [[ -e /tmp/.lg-running ]] && rm /tmp/.lg-running
+            [[ -e /tmp/.kb-running ]] && rm /tmp/.kb-running
             clear
             exit 0 ;;
         *)
@@ -85,17 +84,17 @@ mainmenu() {
     esac
 }
 
-: >/tmp/.language
-: >/tmp/.lg
+: >/tmp/.keymap
+: >/tmp/.kb
 
 
 
-if [[ -e /tmp/.lg-running ]]; then
-    echo "lg already runs on a different console!"
-    echo "Please remove /tmp/.lg-running first to continue!"
+if [[ -e /tmp/.kb-running ]]; then
+    echo "kb already runs on a different console!"
+    echo "Please remove /tmp/.kb-running first to continue!"
     exit 1
 fi
-: >/tmp/.lg-running
+: >/tmp/.kb-running
 
 while true; do
     mainmenu

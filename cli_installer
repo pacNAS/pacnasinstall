@@ -4163,6 +4163,13 @@ set_language() {
     fi
 }
 
+set_keymap() {
+    if [[ -e scripts/kb ]]; then
+        scripts/kb --setup && NEXTITEM="1"
+    else
+        DIALOG --msgbox $"Error:\nkb script not found, aborting keymaps setting" 0 0
+    fi
+}
 
 # run_mkinitcpio()
 # runs mkinitcpio on the target system, displays output
@@ -4698,24 +4705,27 @@ mainmenu() {
     dialog ${DEFAULT} --backtitle "${TITLE}" --title $" MAIN MENU " \
     --menu $"Use the UP and DOWN arrows to navigate menus.\nUse TAB to switch between buttons and ENTER to select." 17 58 13 \
     "0" $"Set Language" \
-    "1" $"Set Time And Date" \
-    "2" $"Prepare Hard Drive" \
-    "3" $"Install System" \
-    "4" $"Configure System" \
-    "5" $"Exit Install" 2>${ANSWER}
+    "1" $"Set Keymap" \
+    "2" $"Set Time And Date" \
+    "3" $"Prepare Hard Drive" \
+    "4" $"Install System" \
+    "5" $"Configure System" \
+    "6" $"Exit Install" 2>${ANSWER}
     NEXTITEM="$(cat ${ANSWER})"
 
     case $(cat ${ANSWER}) in
         "0")
             set_language ;;
         "1")
-            set_clock ;;
+            set_keymap ;;
         "2")
-            prepare_harddrive ;;
+            set_clock ;;
         "3")
+            prepare_harddrive ;;
+        "4")
             select_packages
             install_bootloader ;;
-        "4")
+        "5")
             configure_system
 
             DIALOG --yesno $"The installation is complete. \nDo you want to restart to your new system?" 0 0 && RESTART_CHECK='S'
@@ -4723,9 +4733,7 @@ mainmenu() {
                 reboot
             fi
             ;;
-        "5")
-
-
+        "6")
             if [[ "${S_SRC}" = "1" && "${MODE}" = "media" ]]; then
                 umount "${_MEDIA}" >/dev/null 2>&1
             fi
