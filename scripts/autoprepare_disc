@@ -1,0 +1,51 @@
+#!/usr/bin/bash
+
+## Check if running as sudo/root ##
+if [ $EUID != 0 ] ; then
+  echo "Must sudo or be root.  Terminating..." >&2
+  exit 1
+fi
+
+autoprepare_partition() {
+  local DEVICE=$1
+  local DISC_SIZE=$2
+  local LOG=$3
+
+  # clean partitiontable to avoid issues!
+  dd if=/dev/zero of=${DEVICE} bs=512 count=2048 >>/dev/null 2>&1
+  wipefs -a ${DEVICE} &>/dev/null
+  parted -a optimal -s ${DEVICE} mktable msdos >>/dev/null 2>&1
+  # Boot (1)
+  DISC_SIZE=$((${DISC_SIZE}-512))
+  parted -a optimal -s ${DEVICE} mkpart primary 1 ${DISC_SIZE} >${LOG}
+  parted -a optimal -s ${DEVICE} set 1 boot on >${LOG}
+  parted -a optimal -s ${DEVICE} mkpart primary linux-swap ${DISC_SIZE} $((${DISC_SIZE}+256)) >${LOG}
+}
+
+autoprepare_format() {
+  local PART_ROOT=$1
+  local LOG=$2
+
+  # we are forcing it, since parted seems to create an ext2 file system automatically
+  mkfs.btrfs -L pacnas-root -f ${PART_ROOT} >${LOG}
+
+  mkdir -p /mnt/pacnas-root >${LOG}
+  # make sure, this is really an ssd, let the user choose?
+  mount -o defaults,noatime,discard,ssd ${PART_ROOT} /mnt/pacnas-root >${LOG}
+  cd /mnt/pacnas-root
+
+  # enable snapshot functionality
+  mkdir __snapshot
+  btrfs subvolume create __active && cd __active >${LOG}
+  btrfs subvolume create home >${LOG}
+  btrfs subvolume create var >${LOG}
+  btrfs subvolume create usr >${LOG}
+
+  chmod 755  ../\__active home var usr
+
+  mkdir /mnt/pacnas-active
+  mount -o defaults,noatime,discard,ssd,subvol=__active ${PART_ROOT} /mnt/pacnas-active
+  cd /mnt/pacnas-active
+}
+
+# vim: set ts=2 sw=2 et:

@@ -17,7 +17,7 @@ abort()
     DIALOG --yesno $"Abort Language Setting?" 6 42 || return 0
     [[ -e /tmp/.lg ]] && rm -f /tmp/.lg
     [[ -e /tmp/.language ]] && rm -f /tmp/.language
-        [[ -e /tmp/.lg-running ]] && rm /tmp/.lg-running
+    [[ -e /tmp/.lg-running ]] && rm /tmp/.lg-running
     clear
     exit 1
 }
@@ -55,10 +55,11 @@ dolanguages() {
     if [[ "${locale}" ]]; then
         cp /etc/locale.gen /tmp/locale.gen
         sed -i "s/#\(${locale}\)/\1/" /tmp/locale.gen
-        echo "LANG=${locale}" > /tmp/locale.conf
+        echo "LANG=\"${locale}\"" > /tmp/locale.conf
         echo "LC_COLLATE=C" >> /tmp/locale.conf
     fi
-S_NEXTITEM=2
+
+    S_NEXTITEM=2
 }
 
 
@@ -104,4 +105,4 @@ done
 clear
 exit 0
 
-# vim: set ts=4 sw=4 et:
+# vim: set ts=2 sw=2 et:
