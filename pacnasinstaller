@@ -144,63 +144,124 @@ default_blockdevices() {
     done
 }
 
+# Disable swap and all mounted partitions for the destination system. Unmount
+# the destination root partition last!
+_umountall()
+{
+    DIALOG --infobox $"Disabling swapspace, unmounting already mounted disk devices..." 0 0
+    swapoff -a >/dev/null 2>&1
+    umount $(mount | grep -v "${DESTDIR} " | grep "${DESTDIR}" | sed 's|\ .*||g') >/dev/null 2>&1
+    umount $(mount | grep "${DESTDIR} " | sed 's|\ .*||g') >/dev/null 2>&1
+}
+
 prepare_harddrive() {
-    NAME_SCHEME_PARAMETER_RUN=""
-
-    if [[ -e scripts/autoprepare_disc ]]; then
-        source scripts/autoprepare_disc
-    else
-        DIALOG --msgbox $"ERROR: Setup cannot find needed script /scripts/autoprepare_disc." 0 0
-        return 1
-    fi
-
-    DISCS=$(default_blockdevices)
-    if [[ "$(echo ${DISCS} | wc -w)" -gt 1 ]]; then
-        DIALOG --msgbox $"Available Disks:\n\n$(_getavaildisks)\n" 0 0
-        DIALOG --menu $"Select the hard drive to use" 14 55 7 $(default_blockdevices _) 2>${ANSWER} || return 1
-        DISC=$(cat ${ANSWER})
-    else
-        DISC=${DISCS}
-    fi
-
-    # get just the disk size in 1000*1000 MB
-    if [[ "$(cat ${block}/$(basename ${DISC} 2>/dev/null)/size 2>/dev/null)" ]]; then
-        DISC_SIZE="$(($(expr $(cat ${block}/$(basename ${DISC})/queue/logical_block_size) '*' $(cat ${block}/$(basename ${DISC})/size))/1000000))"
-    else
-        DIALOG --msgbox $"ERROR: Setup cannot detect size of your device, please use normal installation routine for partitioning and mounting devices." 0 0
-        return 1
-    fi
-
-    DIALOG --defaultno --yesno $"${DISC} will be COMPLETELY ERASED!  Are you absolutely sure?" 0 0 \
-    || return 1
-    DEVICE=${DISC}
-
-    # validate DEVICE
-    if [[ ! -b "${DEVICE}" ]]; then
-      DIALOG --msgbox $"Device '${DEVICE}' is not valid" 0 0
+  if [[ -e scripts/autoprepare_disc ]]; then
+      source scripts/autoprepare_disc
+  else
+      DIALOG --msgbox $"ERROR: Setup cannot find needed script /scripts/autoprepare_disc." 0 0
       return 1
-    fi
+  fi
 
-    PART_ROOT="${DEVICE}1"
-    # start at sector 1 for 4k drive compatibility and correct alignment
-    printk off
-    DIALOG --infobox $"Partitioning ${DEVICE}" 0 0
+  DISCS=$(default_blockdevices)
+  if [[ "$(echo ${DISCS} | wc -w)" -gt 1 ]]; then
+      DIALOG --msgbox $"Available Disks:\n\n$(_getavaildisks)\n" 0 0
+      DIALOG --menu $"Select the hard drive to use" 14 55 7 $(default_blockdevices _) 2>${ANSWER} || return 1
+      DISC=$(cat ${ANSWER})
+  else
+      DISC=${DISCS}
+  fi
 
-    autoprepare_partition $DEVICE $DISC_SIZE $LOG
+  _umountall
 
-    if [[ $? -gt 0 ]]; then
-        DIALOG --msgbox $"Error partitioning ${DEVICE} (see ${LOG} for details)" 0 0
-        printk on
-        return 1
-    fi
+  # get just the disk size in 1000*1000 MB
+  if [[ "$(cat ${block}/$(basename ${DISC})/size 2>/dev/null)" ]]; then
+      DISC_SIZE="$(($(expr $(cat ${block}/$(basename ${DISC})/queue/logical_block_size) '*' $(cat ${block}/$(basename ${DISC})/size))/1000000))"
+  else
+      DIALOG --msgbox $"ERROR: Setup cannot detect size of your device, please use normal installation routine for partitioning and mounting devices." 0 0
+      return 1
+  fi
 
-    autoprepare_format $PART_ROOT $LOG
+  DIALOG --defaultno --yesno $"${DISC} will be COMPLETELY ERASED!  Are you absolutely sure?" 0 0 \
+  || return 1
+  DEVICE=${DISC}
 
-    if [[ "${CANCEL}" = "1" ]]; then
-        NEXTITEM="3"
+  # validate DEVICE
+  if [[ ! -b "${DEVICE}" ]]; then
+    DIALOG --msgbox $"Device '${DEVICE}' is not valid" 0 0
+    return 1
+  fi
+
+  PART_ROOT="${DEVICE}1"
+  printk off
+  # start at sector 1 for 4k drive compatibility and correct alignment
+  DIALOG --infobox $"Partitioning ${DEVICE}" 0 0
+
+  # check, that at least around 5GB are available
+  if [[ "${DISC_SIZE}" -lt "5000" ]]; then
+    DIALOG --msgbox $"ERROR: ${DISC_SIZE} is not large enough, please select a different disc to use for an installation of the pacNAS system." 0 0
+    return 1
+  fi
+
+  ROTATIONAL="$(cat ${block}/$(basename ${DISC})/queue/rotational)"
+  SSD_SIZE="0"
+  if [ "ROTATIONAL" = "0" ]; then
+    SSD_SIZE="$((${DISC_SIZE} / 10}))"
+    MAX_AVAIL_SIZE="$((${DISC_SIZE}-${SSD_SIZE}))"
+  else
+    MAX_AVAIL_SIZE="${DISC_SIZE}"
+  fi
+
+  SWAP_SET=""
+  SWAP_PART_SIZE="256"
+  while [[ "${SWAP_SET}" = "" ]]; do
+    DIALOG --inputbox $"Enter the size (MB) of your swap partition,\nMinimum value is 0 (no swap space).\n\nDisk space left: ${MAX_AVAIL_SIZE} MB" 10 65 "${SWAP_SIZE}" 2>${ANSWER} || return 1
+    SWAP_PART_SIZE=$(cat ${ANSWER})
+    if [[ "${SWAP_PART_SIZE}" = "" || "${SWAP_PART_SIZE}" = "0" ]]; then
+        DIALOG --msgbox $"ERROR: No swap space will be created." 0 0
+        SWAP_PART_SIZE=0
+        SWAP_SET=1
     else
-        NEXTITEM="4"
+        if [[ "${SWAP_PART_SIZE}" -ge "${MAX_AVAIL_SIZE}" ]]; then
+            DIALOG --msgbox $"ERROR: You have entered a too large size, please enter again." 0 0
+        else
+            SWAP_SET=1
+        fi
     fi
+  done
+
+  # clean partitiontable to avoid issues!
+  dd if=/dev/zero of=${DEVICE} bs=512 count=2048 >>/dev/null 2>&1
+  wipefs -a ${DEVICE} &>/dev/null
+  parted -a optimal -s ${DEVICE} mktable msdos >>/dev/null 2>&1
+  # Boot (1)
+  if [ "${SWAP_PART_SIZE}" = "0" ]; then
+    DISC_SIZE="100%"
+    NO_SWAP="1"
+  else
+    DISC_SIZE=$((${MAX_AVAIL_SIZE}-${SWAP_PART_SIZE}))
+  fi
+
+  parted -a optimal -s ${DEVICE} mkpart primary 1 ${DISC_SIZE} >${LOG}
+  parted -a optimal -s ${DEVICE} set 1 boot on >${LOG}
+
+  if [ "${NO_SWAP}" != "1" ]; then
+    parted -a optimal -s ${DEVICE} mkpart primary linux-swap ${DISC_SIZE} $((${MAX_AVAIL_SIZE})) >${LOG}
+    mkswap -L pacnas-swap ${DEVICE}2
+  fi
+
+  if [[ $? -gt 0 ]]; then
+      DIALOG --msgbox $"Error partitioning ${DEVICE} (see ${LOG} for details)" 0 0
+      printk on
+      return 1
+  fi
+
+  autoprepare_format $PART_ROOT $LOG
+
+  if [[ "${CANCEL}" = "1" ]]; then
+      NEXTITEM="3"
+  else
+      NEXTITEM="4"
+  fi
 }
 
 # install_packages()
@@ -233,8 +294,10 @@ install_packages() {
 }
 
 configure_system() {
+  # generate fstab
   genfstab -p ${DESTDIR} >> ${DESTDIR}/etc/fstab
 
+  # set locale specific options
   if [[ -e /tmp/locale.gen ]]; then
     cp -vf /tmp/locale.gen ${DESTDIR}/etc/locale.gen
     cp -vf /tmp/locale.conf ${DESTDIR}/etc/locale.conf
@@ -248,6 +311,7 @@ configure_system() {
     arch-chroot ${DESTDIR} locale-gen
   fi
 
+  # set hostname
   HOSTNAME_SET=""
   while [[ "${HOSTNAME_SET}" = "" ]]; do
       DIALOG --inputbox $"Enter the hostname: " 10 65 "pacnas" 2>${ANSWER} || return 1
@@ -256,9 +320,10 @@ configure_system() {
   done
 
   if [ -z HOSTNAME_SET ]; then
-    arch-chroot ${DESTDIR} hostnamectl set-hostname ${HOSTNAME}
+    echo "${HOSTNAME}" > ${DESTDIR}/etc/hostname
   fi
 
+  # set root password
   PASSWORD_SET=""
   while [[ "${PASSWORD_SET}" = "" ]]; do
       DIALOG --inputbox $"Enter the new root password: " 10 65 "" 2>${ANSWER} || return 1
@@ -267,7 +332,7 @@ configure_system() {
   done
 
   if [ -z PASSWORD_SET ]; then
-    arch-chroot ${DESTDIR} echo "${PASSWORD}:root" | chpasswd
+    arch-chroot ${DESTDIR} "echo \"root:${PASSWORD}\" | chpasswd"
   fi
 
   arch-chroot ${DESTDIR} mkinitcpio -p linux
