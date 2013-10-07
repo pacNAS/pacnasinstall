@@ -295,7 +295,7 @@ install_packages() {
 
 configure_system() {
   # generate fstab
-  genfstab -p ${DESTDIR} >> ${DESTDIR}/etc/fstab
+  genfstab -L -p ${DESTDIR} >> ${DESTDIR}/etc/fstab
 
   # set locale specific options
   if [[ -e /tmp/locale.gen ]]; then
@@ -332,7 +332,7 @@ configure_system() {
   done
 
   if [ -z PASSWORD_SET ]; then
-    arch-chroot ${DESTDIR} "echo \"root:${PASSWORD}\" | chpasswd"
+    echo "root:${PASSWORD}" | arch-chroot ${DESTDIR} chpasswd
   fi
 
   arch-chroot ${DESTDIR} mkinitcpio -p linux
