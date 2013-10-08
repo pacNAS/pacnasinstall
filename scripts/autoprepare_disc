@@ -11,12 +11,12 @@ autoprepare_format() {
   local LOG=$2
 
   # we are forcing it, since parted seems to create an ext2 file system automatically
-  mkfs.btrfs -L pacnas-root -f ${PART_ROOT} >>/tmp/debug.log #${LOG}
+  mkfs.btrfs -L pacnas_root -f ${PART_ROOT} >>/tmp/debug.log #${LOG}
 
-  mkdir -p /mnt/pacnas-root >${LOG}
+  mkdir -p /mnt/pacnas_root >${LOG}
   # make sure, this is really an ssd, let the user choose?
-  mount -o defaults,noatime ${PART_ROOT} /mnt/pacnas-root >>/tmp/debug.log #${LOG}
-  cd /mnt/pacnas-root
+  mount -o defaults,noatime ${PART_ROOT} /mnt/pacnas_root >>/tmp/debug.log #${LOG}
+  cd /mnt/pacnas_root
 
   # enable snapshot functionality
   mkdir __snapshot
@@ -27,9 +27,9 @@ autoprepare_format() {
 
   chmod 755  ../\__active home var usr
 
-  mkdir /mnt/pacnas-active >>/tmp/debug.log #
-  mount -o defaults,noatime,subvol=__active ${PART_ROOT} /mnt/pacnas-active
-  cd /mnt/pacnas-active
+  mkdir /mnt/pacnas_active >>/tmp/debug.log #
+  mount -o defaults,noatime,subvol=__active ${PART_ROOT} /mnt/pacnas_active
+  cd /mnt/pacnas_active
 }
 
 # vim: set ts=2 sw=2 et:

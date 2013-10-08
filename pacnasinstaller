@@ -19,7 +19,7 @@ TITLE=$"pacNAS Installation - v$PACNAS_VERSION"
 LOG="/tmp/install.log"
 touch $LOG
 
-DESTDIR="/mnt/pacnas-active"
+DESTDIR="/mnt/pacnas_active"
 EDITOR="vi"
 _BLKID="blkid -c /dev/null"
 
@@ -69,19 +69,19 @@ _checklist_dialog()
 }
 
 set_language() {
-    if [[ -e scripts/lg ]]; then
-        scripts/lg --setup && NEXTITEM="1"
-    else
-        DIALOG --msgbox $"Error:\nlg script not found, aborting language setting" 0 0
-    fi
+  if [[ -e scripts/lg ]]; then
+      scripts/lg --setup && NEXTITEM="1"
+  else
+      DIALOG --msgbox $"Error:\nlg script not found, aborting language setting" 0 0
+  fi
 }
 
 set_keymap() {
-    if [[ -e scripts/kb ]]; then
-        scripts/kb --setup && NEXTITEM="2"
-    else
-        DIALOG --msgbox $"Error:\nkb script not found, aborting keymaps setting" 0 0
-    fi
+  if [[ -e scripts/kb ]]; then
+      scripts/kb --setup && NEXTITEM="2"
+  else
+      DIALOG --msgbox $"Error:\nkb script not found, aborting keymaps setting" 0 0
+  fi
 }
 
 # chroot_mount()
@@ -89,14 +89,14 @@ set_keymap() {
 #
 chroot_mount()
 {
-    [[ -e "${DESTDIR}/sys" ]] || mkdir -m 555 "${DESTDIR}/sys"
-    [[ -e "${DESTDIR}/proc" ]] || mkdir -m 555 "${DESTDIR}/proc"
-    [[ -e "${DESTDIR}/dev" ]] || mkdir "${DESTDIR}/dev"
-    mount -t sysfs sysfs "${DESTDIR}/sys"
-    mount -t proc proc "${DESTDIR}/proc"
-    mount -o bind /dev "${DESTDIR}/dev"
-    chmod 555 "${DESTDIR}/sys"
-    chmod 555 "${DESTDIR}/proc"
+  [[ -e "${DESTDIR}/sys" ]] || mkdir -m 555 "${DESTDIR}/sys"
+  [[ -e "${DESTDIR}/proc" ]] || mkdir -m 555 "${DESTDIR}/proc"
+  [[ -e "${DESTDIR}/dev" ]] || mkdir "${DESTDIR}/dev"
+  mount -t sysfs sysfs "${DESTDIR}/sys"
+  mount -t proc proc "${DESTDIR}/proc"
+  mount -o bind /dev "${DESTDIR}/dev"
+  chmod 555 "${DESTDIR}/sys"
+  chmod 555 "${DESTDIR}/proc"
 }
 
 # chroot_umount()
@@ -104,44 +104,37 @@ chroot_mount()
 #
 chroot_umount()
 {
-    umount "${DESTDIR}/proc"
-    umount "${DESTDIR}/sys"
-    umount "${DESTDIR}/dev"
-}
-
-# list eth devices with mac adress
-net_interfaces() {
-    for i in $(ls /sys/class/net | grep eth); do
-        echo "$i $(cat /sys/class/net/$i/address)"
-    done
+  umount "${DESTDIR}/proc"
+  umount "${DESTDIR}/sys"
+  umount "${DESTDIR}/dev"
 }
 
 # lists default linux blockdevices
 default_blockdevices() {
-    # ide devices
-    for dev in $(ls ${block} 2>/dev/null | egrep '^hd'); do
-        if [[ "$(cat ${block}/${dev}/device/media)" = "disk" ]]; then
-            if ! [[ "$(cat ${block}/${dev}/size)" = "0" ]]; then
-                if ! [[ "$(cat /proc/mdstat 2>/dev/null | grep "${dev}\[")" || "$(dmraid -rc | grep /dev/${dev})" ]]; then
-                    echo "/dev/${dev}"
-                    [[ "${1}" ]] && echo ${1}
-                fi
-            fi
+  # ide devices
+  for dev in $(ls ${block} 2>/dev/null | egrep '^hd'); do
+    if [[ "$(cat ${block}/${dev}/device/media)" = "disk" ]]; then
+      if ! [[ "$(cat ${block}/${dev}/size)" = "0" ]]; then
+        if ! [[ "$(cat /proc/mdstat 2>/dev/null | grep "${dev}\[")" || "$(dmraid -rc | grep /dev/${dev})" ]]; then
+          echo "/dev/${dev}"
+          [[ "${1}" ]] && echo ${1}
         fi
-    done
-    #scsi/sata devices, and virtio blockdevices (/dev/vd*)
-    for dev in $(ls ${block} 2>/dev/null | egrep '^[sv]d'); do
-        # virtio device doesn't have type file!
-        blktype="$(cat ${block}/${dev}/device/type 2>/dev/null)"
-        if ! [[ "${blktype}" = "5" ]]; then
-            if ! [[ "$(cat ${block}/${dev}/size)" = "0" ]]; then
-                if ! [[ "$(cat /proc/mdstat 2>/dev/null | grep "${dev}\[")" || "$(dmraid -rc | grep /dev/${dev})" ]]; then
-                    echo "/dev/${dev}"
-                    [[ "${1}" ]] && echo ${1}
-                fi
-            fi
+      fi
+    fi
+  done
+  #scsi/sata devices, and virtio blockdevices (/dev/vd*)
+  for dev in $(ls ${block} 2>/dev/null | egrep '^[sv]d'); do
+    # virtio device doesn't have type file!
+    blktype="$(cat ${block}/${dev}/device/type 2>/dev/null)"
+    if ! [[ "${blktype}" = "5" ]]; then
+      if ! [[ "$(cat ${block}/${dev}/size)" = "0" ]]; then
+        if ! [[ "$(cat /proc/mdstat 2>/dev/null | grep "${dev}\[")" || "$(dmraid -rc | grep /dev/${dev})" ]]; then
+          echo "/dev/${dev}"
+          [[ "${1}" ]] && echo ${1}
         fi
-    done
+      fi
+    fi
+  done
 }
 
 # Disable swap and all mounted partitions for the destination system. Unmount
@@ -156,29 +149,29 @@ _umountall()
 
 prepare_harddrive() {
   if [[ -e scripts/autoprepare_disc ]]; then
-      source scripts/autoprepare_disc
+    source scripts/autoprepare_disc
   else
-      DIALOG --msgbox $"ERROR: Setup cannot find needed script /scripts/autoprepare_disc." 0 0
-      return 1
+    DIALOG --msgbox $"ERROR: Setup cannot find needed script /scripts/autoprepare_disc." 0 0
+    return 1
   fi
 
   DISCS=$(default_blockdevices)
   if [[ "$(echo ${DISCS} | wc -w)" -gt 1 ]]; then
-      DIALOG --msgbox $"Available Disks:\n\n$(_getavaildisks)\n" 0 0
-      DIALOG --menu $"Select the hard drive to use" 14 55 7 $(default_blockdevices _) 2>${ANSWER} || return 1
-      DISC=$(cat ${ANSWER})
+    DIALOG --msgbox $"Available Disks:\n\n$(_getavaildisks)\n" 0 0
+    DIALOG --menu $"Select the hard drive to use" 14 55 7 $(default_blockdevices _) 2>${ANSWER} || return 1
+    DISC=$(cat ${ANSWER})
   else
-      DISC=${DISCS}
+    DISC=${DISCS}
   fi
 
   _umountall
 
   # get just the disk size in 1000*1000 MB
   if [[ "$(cat ${block}/$(basename ${DISC})/size 2>/dev/null)" ]]; then
-      DISC_SIZE="$(($(expr $(cat ${block}/$(basename ${DISC})/queue/logical_block_size) '*' $(cat ${block}/$(basename ${DISC})/size))/1000000))"
+    DISC_SIZE="$(($(expr $(cat ${block}/$(basename ${DISC})/queue/logical_block_size) '*' $(cat ${block}/$(basename ${DISC})/size))/1000000))"
   else
-      DIALOG --msgbox $"ERROR: Setup cannot detect size of your device, please use normal installation routine for partitioning and mounting devices." 0 0
-      return 1
+    DIALOG --msgbox $"ERROR: Setup cannot detect size of your device, please use normal installation routine for partitioning and mounting devices." 0 0
+    return 1
   fi
 
   DIALOG --defaultno --yesno $"${DISC} will be COMPLETELY ERASED!  Are you absolutely sure?" 0 0 \
@@ -217,15 +210,15 @@ prepare_harddrive() {
     DIALOG --inputbox $"Enter the size (MB) of your swap partition,\nMinimum value is 0 (no swap space).\n\nDisk space left: ${MAX_AVAIL_SIZE} MB" 10 65 "${SWAP_SIZE}" 2>${ANSWER} || return 1
     SWAP_PART_SIZE=$(cat ${ANSWER})
     if [[ "${SWAP_PART_SIZE}" = "" || "${SWAP_PART_SIZE}" = "0" ]]; then
-        DIALOG --msgbox $"ERROR: No swap space will be created." 0 0
-        SWAP_PART_SIZE=0
-        SWAP_SET=1
+      DIALOG --msgbox $"ERROR: No swap space will be created." 0 0
+      SWAP_PART_SIZE=0
+      SWAP_SET=1
     else
-        if [[ "${SWAP_PART_SIZE}" -ge "${MAX_AVAIL_SIZE}" ]]; then
-            DIALOG --msgbox $"ERROR: You have entered a too large size, please enter again." 0 0
-        else
-            SWAP_SET=1
-        fi
+      if [[ "${SWAP_PART_SIZE}" -ge "${MAX_AVAIL_SIZE}" ]]; then
+        DIALOG --msgbox $"ERROR: You have entered a too large size, please enter again." 0 0
+      else
+        SWAP_SET=1
+      fi
     fi
   done
 
@@ -246,21 +239,21 @@ prepare_harddrive() {
 
   if [ "${NO_SWAP}" != "1" ]; then
     parted -a optimal -s ${DEVICE} mkpart primary linux-swap ${DISC_SIZE} $((${MAX_AVAIL_SIZE})) >${LOG}
-    mkswap -L pacnas-swap ${DEVICE}2
+    mkswap -L pacnas_swap ${DEVICE}2
   fi
 
   if [[ $? -gt 0 ]]; then
-      DIALOG --msgbox $"Error partitioning ${DEVICE} (see ${LOG} for details)" 0 0
-      printk on
-      return 1
+    DIALOG --msgbox $"Error partitioning ${DEVICE} (see ${LOG} for details)" 0 0
+    printk on
+    return 1
   fi
 
   autoprepare_format $PART_ROOT $LOG
 
   if [[ "${CANCEL}" = "1" ]]; then
-      NEXTITEM="3"
+    NEXTITEM="2"
   else
-      NEXTITEM="4"
+    NEXTITEM="3"
   fi
 }
 
@@ -279,65 +272,62 @@ install_packages() {
 
     ${PACMAN} base grub btrfs-progs openssh >${LOG} 2>${PACMAN_SYNC_LOG} || return 1
     if [[ $? -ne 0 ]]; then
-        DIALOG --msgbox $"Pacman preparation failed! Check ${LOG} for errors." 6 60
-        return 1
+      DIALOG --msgbox $"Pacman preparation failed! Check ${LOG} for errors." 6 60
+      return 1
     fi
-    if [[ `grep error ${PACMAN_SYNC_LOG}` ]];then
-      _state_sync='missing'
-    else
+# cannot run with fsck hook in mkinitcpio, use our own package
+#    if [[ `grep error ${PACMAN_SYNC_LOG}` ]];then
+#      _state_sync='missing'
+#    else
       _state_sync='complete'
-    fi
+#    fi
   done
 
   S_INSTALL=1
-  NEXTITEM="5"
+  NEXTITEM="4"
 }
 
 configure_system() {
   # generate fstab
-  genfstab -L -p ${DESTDIR} >> ${DESTDIR}/etc/fstab
-
-  # set locale specific options
-  if [[ -e /tmp/locale.gen ]]; then
-    cp -vf /tmp/locale.gen ${DESTDIR}/etc/locale.gen
-    cp -vf /tmp/locale.conf ${DESTDIR}/etc/locale.conf
-  fi
+  genfstab -L -p ${DESTDIR} > ${DESTDIR}/etc/fstab
 
   if [[ -e /tmp/vconsole.conf ]]; then
     cp -vf /tmp/vconsole.conf ${DESTDIR}/etc
   fi
 
-  if [[ -e /etc/locale.gen ]]; then
-    arch-chroot ${DESTDIR} locale-gen
-  fi
-
   # set hostname
-  HOSTNAME_SET=""
-  while [[ "${HOSTNAME_SET}" = "" ]]; do
-      DIALOG --inputbox $"Enter the hostname: " 10 65 "pacnas" 2>${ANSWER} || return 1
-      HOSTNAME=$(cat ${ANSWER})
-      HOSTNAME_SET=1
+  HOSTNAME=""
+  while [[ "${HOSTNAME}" = "" ]]; do
+    DIALOG --inputbox $"Enter the hostname: " 10 65 "pacnas" 2>${ANSWER} || return 1
+    HOSTNAME="$(cat ${ANSWER})"
   done
 
-  if [ -z HOSTNAME_SET ]; then
+  if [ "${HOSTNAME}" != "" ]; then
     echo "${HOSTNAME}" > ${DESTDIR}/etc/hostname
   fi
 
   # set root password
   PASSWORD_SET=""
   while [[ "${PASSWORD_SET}" = "" ]]; do
-      DIALOG --inputbox $"Enter the new root password: " 10 65 "" 2>${ANSWER} || return 1
-      PASSWORD=$(cat ${ANSWER})
-      PASSWORD_SET=1
+    DIALOG --inputbox $"Enter the new root password: " 10 65 "" 2>${ANSWER} || return 1
+    PASSWORD=$(cat ${ANSWER})
+    PASSWORD_SET=1
   done
 
-  if [ -z PASSWORD_SET ]; then
+  if [ "${PASSWORD_SET}" = "1" ]; then
     echo "root:${PASSWORD}" | arch-chroot ${DESTDIR} chpasswd
   fi
 
   arch-chroot ${DESTDIR} mkinitcpio -p linux
 
-  NEXTITEM="6"
+  NEXTITEM="5"
+}
+
+configure_network() {
+  mkdir -p ${DESTDIR}/etc/udev/rules.d
+  cp /etc/udev/rules.d/81-dhcpcd.rules ${DESTDIR}/etc/udev/rules.d/81-dhcpd.rules
+
+  DIALOG --msgbox $"The Network is configured to use DHCP, if you like to use a static address, please configure it for yourself."
 }
 
 install_bootloader() {
@@ -345,82 +335,81 @@ install_bootloader() {
 
   DISCS=$(default_blockdevices)
   if [[ "$(echo ${DISCS} | wc -w)" -gt 1 ]]; then
-      DIALOG --msgbox $"Available Disks:\n\n$(_getavaildisks)\n" 0 0
-      DIALOG --menu $"Select the hard drive to use" 14 55 7 $(default_blockdevices _) 2>${ANSWER} || return 1
-      DISC=$(cat ${ANSWER})
+    DIALOG --msgbox $"Available Disks:\n\n$(_getavaildisks)\n" 0 0
+    DIALOG --menu $"Select the hard drive to use" 14 55 7 $(default_blockdevices _) 2>${ANSWER} || return 1
+    DISC=$(cat ${ANSWER})
   else
-      DISC=${DISCS}
+    DISC=${DISCS}
   fi
 
-  pacman -r ${DESTDIR} -S grub
-  arch-chroot ${DESTDIR} grub-install --target=i386-pc --recheck $DISC
-  arch-chroot ${DESTDIR} grub-mkconfig -o /boot/grub/grub.cfg
+  arch-chroot ${DESTDIR} grub-install --target=i386-pc --recheck $DISC >>/tmp/debug.log
+  arch-chroot ${DESTDIR} grub-mkconfig -o /boot/grub/grub.cfg >>/tmp/debug.log
 
-  NEXTITEM="7"
+  NEXTITEM="6"
 }
 
 mainmenu() {
-    if [[ -n "${NEXTITEM}" ]]; then
-        DEFAULT="--default-item ${NEXTITEM}"
-    else
-        DEFAULT=""
-    fi
+  if [[ -n "${NEXTITEM}" ]]; then
+    DEFAULT="--default-item ${NEXTITEM}"
+  else
+    DEFAULT=""
+  fi
 
-    dialog ${DEFAULT} --backtitle "${TITLE}" --title $" MAIN MENU " \
-    --menu $"Use the UP and DOWN arrows to navigate menus.\nUse TAB to switch between buttons and ENTER to select." 17 58 13 \
-    "0" $"Set Language" \
-    "1" $"Set Keymap" \
-    "2" $"Set Time And Date" \
-    "3" $"Prepare Hard Drive" \
-    "4" $"Install System" \
-    "5" $"Configure System" \
-    "6" $"Install Bootloader" \
-    "7" $"Exit Install" 2>${ANSWER}
-    NEXTITEM="$(cat ${ANSWER})"
+# right now we do not offer any other language then english...
+#   "0" $"Set Language" \
 
-    case $(cat ${ANSWER}) in
-        "0")
-            set_language ;;
-        "1")
-            set_keymap ;;
-        "2")
-            set_clock ;;
-        "3")
-            prepare_harddrive ;;
-        "4")
-            install_packages ;;
-        "5")
-            configure_system ;;
-        "6")
-            install_bootloader
+  dialog ${DEFAULT} --backtitle "${TITLE}" --title $" MAIN MENU " \
+  --menu $"Use the UP and DOWN arrows to navigate menus.\nUse TAB to switch between buttons and ENTER to select." 17 58 13 \
+  "1" $"Set Keymap" \
+  "2" $"Prepare Hard Drive" \
+  "3" $"Install System" \
+  "4" $"Configure System" \
+  "5" $"Install Bootloader" \
+  "6" $"Exit Install" 2>${ANSWER}
+  NEXTITEM="$(cat ${ANSWER})"
 
-            DIALOG --yesno $"The installation is complete. \nDo you want to restart to your new system?" 0 0 && RESTART_CHECK='S'
-            if [[ "${RESTART_CHECK}" == 'S' ]];then
-                reboot
-            fi
-            ;;
-        "7")
-            [[ -e /tmp/.setup-running ]] && rm /tmp/.setup-running
-            clear
-            echo ""
-            echo "If the install finished successfully, you can now type 'reboot'"
-            echo "to restart the system."
-            echo ""
-            exit 0 ;;
-        *)
-            DIALOG --yesno $"Abort Installation?" 6 40 && [[ -e /tmp/.setup-running ]] && rm /tmp/.setup-running && clear && exit 0
-            ;;
+  case $(cat ${ANSWER}) in
+    "0")
+      set_language ;;
+    "1")
+      set_keymap ;;
+    "2")
+      prepare_harddrive ;;
+    "3")
+      install_packages ;;
+    "4")
+      configure_system
+      configure_network ;;
+    "5")
+      install_bootloader
 
-    esac
+      DIALOG --yesno $"The installation is complete. \nDo you want to restart to your new system?" 0 0 && RESTART_CHECK='S'
+      if [[ "${RESTART_CHECK}" == 'S' ]];then
+          reboot
+      fi
+      ;;
+    "6")
+      [[ -e /tmp/.setup-running ]] && rm /tmp/.setup-running
+      clear
+      echo ""
+      echo "If the install finished successfully, you can now type 'reboot'"
+      echo "to restart the system."
+      echo ""
+      exit 0 ;;
+    *)
+      DIALOG --yesno $"Abort Installation?" 6 40 && [[ -e /tmp/.setup-running ]] && rm /tmp/.setup-running && clear && exit 0
+      ;;
+
+  esac
 }
 
 #####################
 ## begin execution ##
 if [[ -e /tmp/.setup-running ]]; then
-    DIALOG --yesno $"Wait! \n\pacNAS Installer is already running somewhere else! \n\nDo you want to start from the beginning?" 0 0 && rm /tmp/.setup-running /tmp/.km-running /tmp/setup-pacman-running /tmp/setup-mkinitcpio-running /tmp/.tz-running /tmp/.setup
-    if [[ -e /tmp/.setup-running ]]; then
-        exit 1
-    fi
+  DIALOG --yesno $"Wait! \n\pacNAS Installer is already running somewhere else! \n\nDo you want to start from the beginning?" 0 0 && rm /tmp/.setup-running /tmp/.km-running /tmp/setup-pacman-running /tmp/setup-mkinitcpio-running /tmp/.tz-running /tmp/.setup
+  if [[ -e /tmp/.setup-running ]]; then
+    exit 1
+  fi
 fi
 
 : >/tmp/.setup-running
@@ -429,7 +418,7 @@ DIALOG --msgbox $"Welcome to the pacNAS Installation program.\n\nThe install pro
 sh scripts/rankmirrors-script &
 
 while true; do
-    mainmenu
+  mainmenu
 done
 
 clear
