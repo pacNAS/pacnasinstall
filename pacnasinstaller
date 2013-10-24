@@ -6,7 +6,7 @@ if [ $EUID != 0 ] ; then
   exit 1
 fi
 
-INSTALLER_VERSION=0.2
+INSTALLER_VERSION=0.4
 PACNAS_VERSION=0.1
 
 TEXTDOMAIN=pacnas_installer
