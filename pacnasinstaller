@@ -6,7 +6,7 @@ if [ $EUID != 0 ] ; then
   exit 1
 fi
 
-INSTALLER_VERSION=0.1
+INSTALLER_VERSION=0.2
 PACNAS_VERSION=0.1
 
 TEXTDOMAIN=pacnas_installer
@@ -107,6 +107,16 @@ chroot_umount()
   umount "${DESTDIR}/proc"
   umount "${DESTDIR}/sys"
   umount "${DESTDIR}/dev"
+}
+
+# list eth devices with mac adress
+net_interfaces() {
+    for i in $(ls /sys/class/net); do
+      if [ $i != 'lo' ]; then
+          echo "${i}"
+          [[ "${1}" ]] && echo ${1}
+      fi
+    done
 }
 
 # lists default linux blockdevices
@@ -324,10 +334,96 @@ configure_system() {
 }
 
 configure_network() {
-  mkdir -p ${DESTDIR}/etc/udev/rules.d
-  cp /etc/udev/rules.d/81-dhcpcd.rules ${DESTDIR}/etc/udev/rules.d/81-dhcpd.rules
+#  mkdir -p ${DESTDIR}/etc/udev/rules.d
+#  cp /etc/udev/rules.d/81-dhcpcd.rules ${DESTDIR}/etc/udev/rules.d/81-dhcpd.rules
+  NET_INTERFACES=
+  for i in $(ls /sys/class/net); do
+    if [ $i != 'lo' ]; then
+        NET_INTERFACES="${NET_INTERFACES} ${i} -"
+    fi
+  done
 
-  DIALOG --msgbox $"The Network is configured to use DHCP, if you like to use a static address, please configure it for yourself."
+  CANCEL=""
+  DIALOG --menu $"Select the interface to use" 22 60 16 ${NET_INTERFACES} 2>${ANSWER} || CANCEL="1"
+  if [[ "${CANCEL}" = "1" ]]; then
+      S_NEXTITEM="5"
+      return 1
+  fi
+
+  NET_INTERFACE=$(cat ${ANSWER})
+
+  NET_TYPES="dhcp - static -"
+
+  CANCEL=""
+  DIALOG --menu $"Select the network configuration type" 22 60 16 ${NET_TYPES} 2>${ANSWER} || CANCEL="1"
+  if [[ "${CANCEL}" = "1" ]]; then
+      S_NEXTITEM="5"
+      return 1
+  fi
+
+  NET_TYPE=$(cat ${ANSWER})
+
+  # type dhcp - easy one, configure and exit
+  if [[ "${NET_TYPE}" = "dhcp" ]]; then
+    DIALOG --msgbox $"Config: ${NET_INTERFACE} with Type: ${NET_TYPE}" 0 0
+    arch-chroot ${DESTDIR} systemctl enable dhcpcd@${NET_INTERFACE}.service --no-reload
+    S_NEXTITEM="5"
+    return 0
+  fi
+
+  # this should only be reached, if type == static
+  IP_SET=""
+  while [[ "${IP_SET}" = "" ]]; do
+    DIALOG --inputbox $"Enter the IP for the network device ${NET_INTERFACE}" 10 65 2>${ANSWER} || return 1
+    IP=$(cat ${ANSWER})
+    IP_SET=1
+  done
+
+  MASK_SET=""
+  while [[ "${MASK_SET}" = "" ]]; do
+    DIALOG --inputbox $"Enter the Netmask for the network device ${NET_INTERFACE}" 10 65 "24" 2>${ANSWER} || return 1
+    MASK=$(cat ${ANSWER})
+    MASK_SET=1
+  done
+
+  BROADCAST_SET=""
+  while [[ "${BROADCAST_SET}" = "" ]]; do
+    DIALOG --inputbox $"Enter the Broadcast for the network device ${NET_INTERFACE}" 10 65 ".255" 2>${ANSWER} || return 1
+    BROADCAST=$(cat ${ANSWER})
+    BROADCAST_SET=1
+  done
+
+  GW_SET=""
+  while [[ "${GW_SET}" = "" ]]; do
+    DIALOG --inputbox $"Enter the Gateway for the network device ${NET_INTERFACE}" 10 65 2>${ANSWER} || return 1
+    GW=$(cat ${ANSWER})
+    GW_SET=1
+  done
+
+  DNS_SET=""
+  while [[ "${DNS_SET}" = "" ]]; do
+    DIALOG --inputbox $"Enter the DNS for the network device ${NET_INTERFACE}" 10 65 "${GW}" 2>${ANSWER} || return 1
+    DNS=$(cat ${ANSWER})
+    DNS_SET=1
+  done
+
+  # create netctl config and enable systemctl service in chroot
+  mkdir -p ${DESTDIR}/etc/conf.d
+  local NET_FILE=${DESTDIR}/etc/conf.d/network@${NET_INTERFACE}
+
+  echo "address=${IP}" >> ${NET_FILE}
+  echo "netmaks=${MASK}" >> ${NET_FILE}
+  echo "broadcast=${BROADCAST}" >> ${NET_FILE}
+  echo "gateway=${GW}" >> ${NET_FILE}
+
+  echo "nameserver ${DNS}" >> ${DESTDIR}/etc/resolv.conf
+
+  cp -vf network-unit.service.tmpl ${DESTDIR}/etc/systemd/system/network@.service >> /tmp/install.log
+
+  arch-chroot ${DESTDIR} systemctl enable network@${NET_INTERFACE}.service --no-reload
+
+  NEXTITEM="6"
+
 }
 
 install_bootloader() {
@@ -345,7 +441,7 @@ install_bootloader() {
   arch-chroot ${DESTDIR} grub-install --target=i386-pc --recheck $DISC >>/tmp/debug.log
   arch-chroot ${DESTDIR} grub-mkconfig -o /boot/grub/grub.cfg >>/tmp/debug.log
 
-  NEXTITEM="6"
+  NEXTITEM="7"
 }
 
 mainmenu() {
@@ -364,8 +460,9 @@ mainmenu() {
   "2" $"Prepare Hard Drive" \
   "3" $"Install System" \
   "4" $"Configure System" \
-  "5" $"Install Bootloader" \
-  "6" $"Exit Install" 2>${ANSWER}
+  "5" $"Configure Network (on new System)" \
+  "6" $"Install Bootloader" \
+  "7" $"Exit Install" 2>${ANSWER}
   NEXTITEM="$(cat ${ANSWER})"
 
   case $(cat ${ANSWER}) in
@@ -378,9 +475,10 @@ mainmenu() {
     "3")
       install_packages ;;
     "4")
-      configure_system
-      configure_network ;;
+      configure_system ;;
     "5")
+      configure_network ;;
+    "6")
       install_bootloader
 
       DIALOG --yesno $"The installation is complete. \nDo you want to restart to your new system?" 0 0 && RESTART_CHECK='S'
@@ -388,12 +486,14 @@ mainmenu() {
           reboot
       fi
       ;;
-    "6")
+    "7")
       [[ -e /tmp/.setup-running ]] && rm /tmp/.setup-running
       clear
       echo ""
       echo "If the install finished successfully, you can now type 'reboot'"
       echo "to restart the system."
+      echo "The system will then be reachable via the configured IP on port"
+      echo "8000 (like: http://127.0.0.1:8000)."
       echo ""
       exit 0 ;;
     *)
