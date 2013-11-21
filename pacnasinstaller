@@ -289,10 +289,12 @@ install_packages() {
 
   DIALOG --msgbox $"Package installation will begin now.  You can watch the output in the progress window. Please be patient." 0 0
 
+  PACNAS_PACKAGES = mkinitcpio-btrfs genesis python2-iptables python2-ntplib pacman-mirrorlist
+
   while [[ "${_state_sync}" != 'complete' ]];do
     DIALOG --infobox $"Refreshing package database..." 6 45
 
-    ${PACMAN} base grub btrfs-progs openssh >${LOG} 2>${PACMAN_SYNC_LOG} || return 1
+    ${PACMAN} base grub btrfs-progs openssh ${PACNAS_PACKAGES} >${LOG} 2>${PACMAN_SYNC_LOG} || return 1
     if [[ $? -ne 0 ]]; then
       DIALOG --msgbox $"Pacman preparation failed! Check ${LOG} for errors." 6 60
       return 1
@@ -340,6 +342,31 @@ configure_system() {
     echo "root:${PASSWORD}" | arch-chroot ${DESTDIR} chpasswd
   fi
 
+  # add additional user
+  ADD_USER_SET=""
+  while [[ "${ADD_USER_SET}" = "" ]]; do
+    DIALOG --inputbox $"Enter the user name of the additional user: " 10 65 "" 2>${ANSWER} || return 1
+    ADD_USER_NAME=$(cat ${ANSWER})
+    ADD_USER_SET=1
+  done
+
+  if [ "${ADD_USER_SET}" = "1" ]; then
+    arch-chroot ${DESTDIR} useradd -G wheel ${ADD_USER_NAME}
+  fi
+
+  # add additional user pwd
+  ADD_USER_PWD_SET=""
+  while [[ "${ADD_USER_PWD_SET}" = "" ]]; do
+    DIALOG --inputbox $"Enter the password of the additional user: " 10 65 "" 2>${ANSWER} || return 1
+    ADD_USER_PWD=$(cat ${ANSWER})
+    ADD_USER_PWD_SET=1
+  done
+
+  if [ "${ADD_USER_PWD_SET}" = "1" ]; then
+    echo "${ADD_USER_NAME}:${ADD_USER_PWD}" | arch-chroot ${DESTDIR} chpasswd
+  fi
+
+  # generate mkinitcpio for system (should contain btrfs hook)
   arch-chroot ${DESTDIR} mkinitcpio -p linux >> ${LOG}
 
   NEXTITEM="5"
@@ -448,6 +475,9 @@ configure_network() {
   mkdir -p "${DESTDIR}/etc/systemd/system/multi-user.target.wants"
   echo "ln -s '$unit' '${unit/system\//system/multi-user.target.wants/}'"
   ln -s "$unit" "${unit/system\//system/multi-user.target.wants/}"
+
+  echo "enable openssh on target system"
+  arch-chroot ${DESTDIR} systemd enable sshd --no-reload
 
   NEXTITEM="6"
 }
