@@ -289,7 +289,7 @@ install_packages() {
 
   DIALOG --msgbox $"Package installation will begin now.  You can watch the output in the progress window. Please be patient." 0 0
 
-  PACNAS_PACKAGES="mkinitcpio-btrfs genesis python2-iptables python2-ntplib pacman-mirrorlist"
+  PACNAS_PACKAGES="sudo mkinitcpio-btrfs genesis python2-iptables python2-ntplib pacman-mirrorlist"
 
   while [[ "${_state_sync}" != 'complete' ]];do
     DIALOG --infobox $"Refreshing package database..." 6 45
