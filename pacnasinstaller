@@ -351,7 +351,7 @@ configure_system() {
   done
 
   if [ "${ADD_USER_SET}" = "1" ]; then
-    arch-chroot ${DESTDIR} useradd -G wheel ${ADD_USER_NAME}
+    arch-chroot ${DESTDIR} useradd -m -g users -G wheel -s /bin/bash ${ADD_USER_NAME}
   fi
 
   # add additional user pwd
