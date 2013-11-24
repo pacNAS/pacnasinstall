@@ -6,7 +6,7 @@ if [ $EUID != 0 ] ; then
   exit 1
 fi
 
-INSTALLER_VERSION=0.6
+INSTALLER_VERSION=0.8
 PACNAS_VERSION=0.1
 
 TEXTDOMAIN=pacnas_installer
@@ -289,7 +289,7 @@ install_packages() {
 
   DIALOG --msgbox $"Package installation will begin now.  You can watch the output in the progress window. Please be patient." 0 0
 
-  PACNAS_PACKAGES = mkinitcpio-btrfs genesis python2-iptables python2-ntplib pacman-mirrorlist
+  PACNAS_PACKAGES="mkinitcpio-btrfs genesis python2-iptables python2-ntplib pacman-mirrorlist"
 
   while [[ "${_state_sync}" != 'complete' ]];do
     DIALOG --infobox $"Refreshing package database..." 6 45
