@@ -219,7 +219,7 @@ prepare_harddrive() {
 
   ROTATIONAL="$(cat ${block}/$(basename ${DISC})/queue/rotational)"
   SSD_SIZE="0"
-  if [ "ROTATIONAL" = "0" ]; then
+  if [ "$ROTATIONAL" = "0" ]; then
     SSD_SIZE="$((${DISC_SIZE} / 10}))"
     MAX_AVAIL_SIZE="$((${DISC_SIZE}-${SSD_SIZE}))"
   else
@@ -270,7 +270,7 @@ prepare_harddrive() {
     return 1
   fi
 
-  autoprepare_format $PART_ROOT $LOG
+  autoprepare_format $PART_ROOT $ROTATIONAL $LOG
 
   if [[ "${CANCEL}" = "1" ]]; then
     NEXTITEM="2"
@@ -294,7 +294,7 @@ install_packages() {
   while [[ "${_state_sync}" != 'complete' ]];do
     DIALOG --infobox $"Refreshing package database..." 6 45
 
-    ${PACMAN} base grub btrfs-progs openssh ${PACNAS_PACKAGES} >${LOG} 2>${PACMAN_SYNC_LOG} || return 1
+    ${PACMAN} base grub btrfs-progs kexec-tools openssh ${PACNAS_PACKAGES} >${LOG} 2>${PACMAN_SYNC_LOG} || return 1
     if [[ $? -ne 0 ]]; then
       DIALOG --msgbox $"Pacman preparation failed! Check ${LOG} for errors." 6 60
       return 1
@@ -315,6 +315,7 @@ configure_system() {
   # generate fstab
   genfstab -L -p ${DESTDIR} > ${DESTDIR}/etc/fstab
 
+  # generage vconsole (well, copy the already created version)
   if [[ -e /tmp/vconsole.conf ]]; then
     cp -vf /tmp/vconsole.conf ${DESTDIR}/etc
   fi
