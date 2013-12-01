@@ -494,9 +494,9 @@ configure_network() {
   MOUNT_OPTIONS=$(cat ${DESTDIR}/etc/fstab | awk '$2 == "/" {print $4",subvolid=0"}')
   mount -o ${MOUNT_OPTIONS} -L pacnas_root ${DESTDIR}/mnt/btrfs >> /etc/install.log
   cd ${DESTDIR}/mnt/btrfs
-  btrfs subvolume snapshot __active __snapshot/after-install >> /etc/install.NEXTITEM
+  btrfs subvolume snapshot __active __active/.snapshots/after-install >> /etc/install.log
 
-  log="6"
+  NEXTITEM="6"
 }
 
 install_bootloader() {
