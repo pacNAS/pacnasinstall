@@ -36,7 +36,7 @@ autoprepare_format() {
   btrfs subvolume create var >>/tmp/debug.log #${LOG}
   btrfs subvolume create opt >>/tmp/debug.log #${LOG}
   # make it snapper compatible
-  btrfs subvolume create .snapshot >> /tmp/debug.log #${LOG}
+  btrfs subvolume create .snapshots >> /tmp/debug.log #${LOG}
 
   chmod 755  ../\__active home var opt
 
@@ -47,7 +47,7 @@ autoprepare_format() {
 
   # enable snapshot functionality
   cd ${BTRFS_ROOT}
-  ln -s ${BTRFS_ROOT}/__active/.snapshots __snapshot >>/tmp/debug.log #${LOG}
+  ln -s __active/.snapshots __snapshot >>/tmp/debug.log #${LOG}
 
   mkdir -p /mnt/pacnas_active >>/tmp/debug.log
   cd /mnt
