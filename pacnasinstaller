@@ -490,7 +490,15 @@ configure_network() {
   echo "enable group 'wheel' in sudoers config"
   sed -i 's/# %wheel ALL=(ALL) ALL/%wheel ALL=(ALL) ALL/g' ${DESTDIR}/etc/sudoers
 
-  NEXTITEM="6"
+  # here we are going to create a "after-install" snapshot
+  MOUNT_OPTIONS=$(cat ${DESTDIR}/etc/fstab | awk '$2 == "/" {print $4",subvolid=0"}')
+  mount -o ${MOUNT_OPTIONS} -L pacnas_root /${DESTDIR}/etc/fstab >> /etc/install.log
+  cd ${DESTDIR}/mnt/btrfs
+  btrfs subvolume snapshot __active __snapshot/after-install >> /etc/install.NEXTITEM
+
+  read -p "WAIT..."
+
+  log="6"
 }
 
 install_bootloader() {
