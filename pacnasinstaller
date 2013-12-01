@@ -496,8 +496,6 @@ configure_network() {
   cd ${DESTDIR}/mnt/btrfs
   btrfs subvolume snapshot __active __snapshot/after-install >> /etc/install.NEXTITEM
 
-  read -p "WAIT..."
-
   log="6"
 }
 
