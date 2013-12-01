@@ -421,7 +421,7 @@ configure_network() {
     DIALOG --msgbox $"Config: ${NET_INTERFACE} with Type: ${NET_TYPE}" 0 0
 
     # create netctl config
-    echo "Description='DHCP Network - ${NET_DESCRIPTION}'" > ${NET_FILE}
+    echo "Description='DHCP Network ${NET_DESCRIPTION}'" > ${NET_FILE}
     echo "Interface=${NET_INTERFACE}" >> ${NET_FILE}
     echo "Connection=ethernet" >> ${NET_FILE}
     echo "IP=dhcp" >> ${NET_FILE}
@@ -457,7 +457,7 @@ configure_network() {
     done
 
     # create netctl config
-    echo "Description='Static Network - ${NET_DESCRIPTION}'" > ${NET_FILE}
+    echo "Description='Static Network ${NET_DESCRIPTION}'" > ${NET_FILE}
     echo "Interface=${NET_INTERFACE}" >> ${NET_FILE}
     echo "Connection=ethernet" >> ${NET_FILE}
     echo "IP=static" >> ${NET_FILE}
