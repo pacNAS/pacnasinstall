@@ -11,47 +11,48 @@ autoprepare_format() {
   local ROTATIONAL=$2
   local LOG=$3
 
+  local BTRFS_ROOT=/mnt/pacnas_root
+
+  echo "make btrfs on pacnas_root"
   # we are forcing it, since parted seems to create an ext2 file system automatically
   mkfs.btrfs -L pacnas_root -f ${PART_ROOT} >>/tmp/debug.log #${LOG}
 
-  mkdir -p /mnt/pacnas_root >${LOG}
+  mkdir -p ${BTRFS_ROOT} >>/tmp/debug.log #${LOG}
   # make sure, this is really an ssd
   MOUNT_OPTIONS="defaults,noatime,compress=lzo"
   if [ "$ROTATIONAL" = "0" ]; then
     MOUNT_OPTIONS=$MOUNT_OPTIONS,ssd
   fi
 
+  echo "mounting ${PART_ROOT} with ${MOUNT_OPTIONS}" >>/tmp/debug.log #${LOG}
   mount -o ${MOUNT_OPTIONS} ${PART_ROOT} /mnt/pacnas_root >>/tmp/debug.log #${LOG}
-  cd /mnt/pacnas_root
+
+  # enable rollback functionality (this will be the new root directory)
+  cd ${BTRFS_ROOT}
+  btrfs subvolume snapshot . __active
+
+  cd ${BTRFS_ROOT}/__active
+  btrfs subvolume create home >>/tmp/debug.log #${LOG}
+  btrfs subvolume create var >>/tmp/debug.log #${LOG}
+  btrfs subvolume create opt >>/tmp/debug.log #${LOG}
+
+  chmod 755  ../\__active home var opt
+
+  # determine root subvolid (needed for mounting correctly with mkinitcpio-btrfs)
+  subvolid=$(btrfs subvolume list . | /usr/bin/awk '/__active/ {print $2}')
+  echo "SubvolID: $subvolid" >> /tmp/debug.log
+  btrfs subvolume set-default $subvolid .
 
   # enable snapshot functionality
-  btrfs subvolume create __snapshot/__active && cd __active >>/tmp/debug.log #${LOG}
-  btrfs subvolume create __snapshot/home >>/tmp/debug.log #${LOG}
-#  btrfs subvolume create __snapshot/var >>/tmp/debug.log #${LOG}
+  cd ${BTRFS_ROOT}
+  mkdir __snapshot >>/tmp/debug.log #${LOG}
 
-  chmod 755  ../\__active home
-
-  for subvolid in $(btrfs subvolume list '/mnt/pacnas_root/__snapshot' | /usr/bin/awk '/__active/ {print $2}') # scan
-  do
-    btrfs subvolume set-default $subvolid
-    # there should be just one ;-)
-    break;
-  done
-
-  mkdir /mnt/pacnas_active >>/tmp/debug.log #
-  umount /mnt/pacnas_root
+  mkdir -p /mnt/pacnas_active >>/tmp/debug.log
+  cd /mnt
+  umount /mnt/pacnas_root >>/tmp/debug.log
 
   # need to provide info, if the disc is an ssd, we are booting default subvolume here (__active)
-  mount -o ${MOUNT_OPTIONS} ${PART_ROOT} /mnt/pacnas_active
-
-  cd /mnt/pacnas_active
-  mkdir -p var/lib/btrfs
-  # mount all subvolumes into /var/lib/btrfs to be able to create further subvolumes and snapshots
-  mount -o ${MOUNT_OPTIONS},subvolid=0 ${PART_ROOT} /mnt/pacnas_active/var/lib/btrfs
-
-  # optional
-  mkdir /mnt/pacnas_active/var/lib/btrfs/emtpy
-  mount --bind /mnt/pacnas_active/var/lib/btrfs/empty /mnt/pacnas_active/var/lib/btrfs/__active
+  mount -o ${MOUNT_OPTIONS} ${PART_ROOT} /mnt/pacnas_active >>/tmp/debug.log
 }
 
 # vim: set ts=2 sw=2 et:
